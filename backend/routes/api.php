@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\FuncionarioController;
 use App\Http\Controllers\Api\LocationController;
 use App\Http\Controllers\Api\MedicoController;
 use App\Http\Controllers\Api\PacienteController;
+use App\Http\Controllers\Api\RegistrationController;
 use App\Http\Controllers\Api\RelatorioController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\ServicoController;
@@ -23,7 +24,14 @@ use App\Http\Controllers\Api\VerificacaoController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('/register', [RegistrationController::class, 'register']);
 Route::get('/verificar/{codigo}', [VerificacaoController::class, 'show']);
+Route::get('/registo/opcoes', function () {
+    return response()->json([
+        'departamentos' => App\Models\Departamento::orderBy('nome')->get(['id', 'nome']),
+        'servicos'      => App\Models\Servico::orderBy('nome')->get(['id', 'nome', 'departamento_id']),
+    ]);
+});
 
 Route::get('/app/android', function () {
     $path = public_path('downloads/sighgb.apk');
@@ -134,6 +142,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('role:admin')->group(function () {
         Route::apiResource('users', UserController::class);
         Route::get('users-roles-list', [UserController::class, 'roles']);
+        Route::post('users/{user}/approve', [UserController::class, 'approve']);
+        Route::post('users/{user}/reject', [UserController::class, 'reject']);
 
         Route::get('roles', [RoleController::class, 'index']);
         Route::get('permissions', [RoleController::class, 'permissions']);

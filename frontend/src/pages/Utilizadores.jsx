@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Plus, Shield, Pencil, Trash2 } from 'lucide-react'
+import { Plus, Shield, Pencil, Trash2, Check, X, Clock } from 'lucide-react'
 import api from '../api/client'
 import { useAuth, useHasRole } from '../auth/AuthContext'
 import Modal from '../components/Modal'
@@ -14,6 +14,8 @@ export default function Utilizadores() {
   const [list, setList] = useState({ data: [], current_page: 1, last_page: 1, total: 0 })
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState('')
+  const [pendingCount, setPendingCount] = useState(0)
   const [roles, setRoles] = useState([])
   const [medicos, setMedicos] = useState([])
   const [open, setOpen] = useState(false)
@@ -21,15 +23,35 @@ export default function Utilizadores() {
   const [errors, setErrors] = useState({})
 
   async function load() {
-    const { data } = await api.get('/users', { params: { page, search } })
+    const params = { page, search }
+    if (statusFilter) params.registration_status = statusFilter
+    const { data } = await api.get('/users', { params })
     setList(data)
+  }
+  async function loadPendingCount() {
+    try {
+      const { data } = await api.get('/users', { params: { registration_status: 'pending', per_page: 1 } })
+      setPendingCount(data.total || 0)
+    } catch {}
   }
   useEffect(() => {
     if (!isAdmin) return
     load()
+    loadPendingCount()
     api.get('/users-roles-list').then((r) => setRoles(r.data))
     api.get('/medicos?per_page=200').then((r) => setMedicos(r.data.data || []))
-  }, [isAdmin, page, search])
+  }, [isAdmin, page, search, statusFilter])
+
+  async function approve(id) {
+    if (!await confirm('Aprovar este registo? O utilizador vai poder entrar imediatamente.')) return
+    try { await api.post(`/users/${id}/approve`); load(); loadPendingCount() }
+    catch (e) { alert(e.response?.data?.message || 'Erro ao aprovar.') }
+  }
+  async function reject(id) {
+    if (!await confirm('Rejeitar este registo? A conta fica bloqueada.')) return
+    try { await api.post(`/users/${id}/reject`); load(); loadPendingCount() }
+    catch (e) { alert(e.response?.data?.message || 'Erro ao rejeitar.') }
+  }
 
   if (!isAdmin) {
     return <div className="card p-6 text-center text-slate-500">Apenas administradores.</div>
@@ -81,8 +103,29 @@ export default function Utilizadores() {
         </button>
       </div>
 
-      <div className="card p-4 mb-4">
-        <input className="input" placeholder="Pesquisar nome ou email…" value={search} onChange={(e) => { setPage(1); setSearch(e.target.value) }} />
+      {pendingCount > 0 && statusFilter !== 'pending' && (
+        <button
+          onClick={() => { setPage(1); setStatusFilter('pending') }}
+          className="w-full mb-4 flex items-center justify-between gap-3 p-3 rounded-lg bg-amber-50 border border-amber-200 hover:bg-amber-100 transition"
+        >
+          <div className="flex items-center gap-2">
+            <Clock size={18} className="text-amber-700" />
+            <span className="text-sm font-medium text-amber-800">
+              {pendingCount} {pendingCount === 1 ? 'registo aguarda' : 'registos aguardam'} aprovação
+            </span>
+          </div>
+          <span className="text-xs text-amber-700 underline">Ver pendentes</span>
+        </button>
+      )}
+
+      <div className="card p-4 mb-4 flex flex-col sm:flex-row gap-3">
+        <input className="input flex-1" placeholder="Pesquisar nome ou email…" value={search} onChange={(e) => { setPage(1); setSearch(e.target.value) }} />
+        <select className="input sm:w-48" value={statusFilter} onChange={(e) => { setPage(1); setStatusFilter(e.target.value) }}>
+          <option value="">Todos os estados</option>
+          <option value="pending">Pendentes</option>
+          <option value="approved">Aprovados</option>
+          <option value="rejected">Rejeitados</option>
+        </select>
       </div>
 
       <div className="card overflow-hidden">
@@ -109,10 +152,33 @@ export default function Utilizadores() {
                 </td>
                 <td className="px-4 py-2 text-xs">{u.medico?.nome || '—'}</td>
                 <td className="px-4 py-2">
-                  {u.ativo ? <span className="badge-emitido">ATIVO</span> : <span className="badge-anulado">INATIVO</span>}
+                  {u.registration_status === 'pending' && (
+                    <span className="inline-block bg-amber-100 text-amber-800 text-xs px-2 py-0.5 rounded">PENDENTE</span>
+                  )}
+                  {u.registration_status === 'rejected' && (
+                    <span className="inline-block bg-red-100 text-red-800 text-xs px-2 py-0.5 rounded">REJEITADO</span>
+                  )}
+                  {(u.registration_status === 'approved' || !u.registration_status) && (
+                    u.ativo
+                      ? <span className="badge-emitido">ATIVO</span>
+                      : <span className="badge-anulado">INATIVO</span>
+                  )}
+                  {u.registration_status === 'pending' && u.requested_role && (
+                    <div className="text-[10px] text-slate-500 mt-1">pediu: {u.requested_role}</div>
+                  )}
                 </td>
                 <td className="px-4 py-2 text-right whitespace-nowrap">
                   <div className="inline-flex gap-1">
+                    {u.registration_status === 'pending' && (
+                      <>
+                        <button onClick={() => approve(u.id)} title="Aprovar" className="p-1.5 rounded hover:bg-emerald-50 text-emerald-600">
+                          <Check size={16} />
+                        </button>
+                        <button onClick={() => reject(u.id)} title="Rejeitar" className="p-1.5 rounded hover:bg-red-50 text-red-600">
+                          <X size={16} />
+                        </button>
+                      </>
+                    )}
                     <button onClick={() => openEdit(u)} title="Editar" className="p-1.5 rounded hover:bg-hgb-50 text-hgb-600">
                       <Pencil size={16} />
                     </button>

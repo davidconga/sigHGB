@@ -15,6 +15,7 @@ class User extends Authenticatable
 
     protected $fillable = [
         'name', 'email', 'password', 'medico_id', 'ativo',
+        'registration_status', 'requested_role', 'approved_at', 'approved_by',
     ];
 
     protected $hidden = [
@@ -27,7 +28,13 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'ativo' => 'boolean',
+            'approved_at' => 'datetime',
         ];
+    }
+
+    public function isPending(): bool
+    {
+        return $this->registration_status === 'pending';
     }
 
     public function medico(): BelongsTo

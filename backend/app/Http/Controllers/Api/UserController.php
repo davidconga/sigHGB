@@ -22,7 +22,46 @@ class UserController extends Controller
             });
         }
 
+        if ($status = $request->string('registration_status')->value()) {
+            $query->where('registration_status', $status);
+        }
+
         return response()->json($query->orderBy('name')->paginate($request->integer('per_page', 15)));
+    }
+
+    public function approve(User $user): JsonResponse
+    {
+        if ($user->registration_status !== 'pending') {
+            return response()->json(['message' => 'Este utilizador já foi processado.'], 422);
+        }
+
+        $user->update([
+            'registration_status' => 'approved',
+            'ativo'               => true,
+            'approved_at'         => now(),
+            'approved_by'         => auth()->id(),
+        ]);
+
+        $role = $user->requested_role ?: 'recepcionista';
+        if (in_array($role, ['medico', 'recepcionista'])) {
+            $user->syncRoles([$role]);
+        }
+
+        return response()->json($user->load(['roles', 'medico']));
+    }
+
+    public function reject(User $user): JsonResponse
+    {
+        if ($user->registration_status !== 'pending') {
+            return response()->json(['message' => 'Este utilizador já foi processado.'], 422);
+        }
+
+        $user->update([
+            'registration_status' => 'rejected',
+            'ativo'               => false,
+        ]);
+
+        return response()->json(['message' => 'Registo rejeitado.']);
     }
 
     public function store(Request $request): JsonResponse

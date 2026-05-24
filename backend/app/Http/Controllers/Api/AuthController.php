@@ -26,6 +26,20 @@ class AuthController extends Controller
 
         $user = User::with('medico')->find(Auth::id());
 
+        if ($user->registration_status === 'pending') {
+            Auth::logout();
+            throw ValidationException::withMessages([
+                'email' => ['O seu registo aguarda aprovação do administrador.'],
+            ]);
+        }
+
+        if ($user->registration_status === 'rejected') {
+            Auth::logout();
+            throw ValidationException::withMessages([
+                'email' => ['O seu pedido de registo foi rejeitado.'],
+            ]);
+        }
+
         if (! $user->ativo) {
             Auth::logout();
             throw ValidationException::withMessages([

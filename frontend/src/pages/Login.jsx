@@ -84,10 +84,17 @@ export default function Login() {
           </a>
         )}
 
-        <div className="text-center mt-4 pt-4 border-t border-slate-100">
-          <Link to="/verificar" className="text-sm text-hgb-600 hover:underline">
-            Verificar autenticidade de um relatório
-          </Link>
+        <div className="text-center mt-4 pt-4 border-t border-slate-100 space-y-2">
+          <div>
+            <Link to="/registo" className="text-sm text-hgb-600 hover:underline">
+              Sou médico ou funcionário — criar conta
+            </Link>
+          </div>
+          <div>
+            <Link to="/verificar" className="text-xs text-slate-500 hover:text-hgb-700">
+              Verificar autenticidade de um relatório
+            </Link>
+          </div>
         </div>
       </div>
     </div>

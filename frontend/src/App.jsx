@@ -5,6 +5,7 @@ import ProtectedRoute from './components/ProtectedRoute'
 import Layout from './components/Layout'
 import Login from './pages/Login'
 import Verificar from './pages/Verificar'
+import Registo from './pages/Registo'
 import Dashboard from './pages/Dashboard'
 import Pacientes from './pages/Pacientes'
 import Medicos from './pages/Medicos'
@@ -33,6 +34,7 @@ export default function App() {
         <ConfirmProvider>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/registo" element={<Registo />} />
           <Route path="/verificar" element={<Verificar />} />
           <Route path="/verificar/:codigo" element={<Verificar />} />
           <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>

@@ -40,6 +40,9 @@ class ImportLegacyAtestadosCommand extends Command
             return self::FAILURE;
         }
 
+        // Silence observers — see ImportLegacyRelatoriosCommand for the why.
+        Atestado::unsetEventDispatcher();
+
         $dry = $this->option('dry-run');
         $limit = (int) $this->option('limit');
 

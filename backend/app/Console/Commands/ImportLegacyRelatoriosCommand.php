@@ -34,6 +34,11 @@ class ImportLegacyRelatoriosCommand extends Command
             return self::FAILURE;
         }
 
+        // Bulk historical import — silence Eloquent events so observers do not
+        // fire a notification SMS for each legacy row (would burn the TelcoSMS
+        // balance and spam the assigned medicos).
+        Relatorio::unsetEventDispatcher();
+
         $dry = $this->option('dry-run');
         $limit = (int) $this->option('limit');
         $defaultMedico = (int) $this->option('default-medico');

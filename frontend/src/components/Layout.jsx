@@ -1,8 +1,10 @@
+import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import {
   LayoutDashboard, Users, Stethoscope, ClipboardList,
   FlaskConical, FileCheck2, BedDouble, LogOut, BookMarked,
   FileSpreadsheet, Settings, UserCog, ShieldCheck, MessageSquare, Briefcase,
+  ChevronsLeft, ChevronsRight,
 } from 'lucide-react'
 import { useAuth } from '../auth/AuthContext'
 
@@ -25,41 +27,80 @@ const links = [
 
 export default function Layout() {
   const { user, logout } = useAuth()
+  const [collapsed, setCollapsed] = useState(
+    () => localStorage.getItem('hgb_sidebar_collapsed') === '1'
+  )
+
+  function toggle() {
+    setCollapsed((c) => {
+      const next = !c
+      localStorage.setItem('hgb_sidebar_collapsed', next ? '1' : '0')
+      return next
+    })
+  }
 
   return (
     <div className="min-h-screen flex">
-      <aside className="w-64 bg-hgb-900 text-slate-100 flex flex-col">
-        <div className="px-5 py-5 border-b border-hgb-700 flex items-center gap-3">
-          <img src="/logo.png" alt="HGB" className="w-12 h-12 bg-white rounded-full p-0.5" />
-          <div>
-            <div className="text-lg font-bold leading-tight">HGB</div>
-            <div className="text-xs text-slate-300 leading-tight">Hospital Geral de Benguela</div>
-          </div>
+      <aside
+        className={`bg-hgb-900 text-slate-100 flex flex-col transition-[width] duration-200 ${
+          collapsed ? 'w-16' : 'w-64'
+        }`}
+      >
+        <div className={`border-b border-hgb-700 flex items-center ${collapsed ? 'px-2 py-4 justify-center' : 'px-5 py-5 gap-3'}`}>
+          <img src="/logo.png" alt="HGB" className={`bg-white rounded-full p-0.5 shrink-0 ${collapsed ? 'w-9 h-9' : 'w-12 h-12'}`} />
+          {!collapsed && (
+            <div className="min-w-0">
+              <div className="text-lg font-bold leading-tight">HGB</div>
+              <div className="text-xs text-slate-300 leading-tight truncate">Hospital Geral de Benguela</div>
+            </div>
+          )}
         </div>
-        <nav className="flex-1 px-3 py-4 space-y-1">
+
+        <nav className={`flex-1 py-4 space-y-1 ${collapsed ? 'px-2' : 'px-3'}`}>
           {links.filter((l) => !l.adminOnly || user?.roles?.includes('admin')).map(({ to, label, end, Icon }) => (
             <NavLink
               key={to}
               to={to}
               end={end}
+              title={collapsed ? label : undefined}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2 rounded-md text-sm transition ${
+                `flex items-center gap-3 rounded-md text-sm transition ${
+                  collapsed ? 'px-0 py-2 justify-center' : 'px-3 py-2'
+                } ${
                   isActive ? 'bg-hgb-600 text-white font-medium' : 'text-slate-300 hover:bg-hgb-700 hover:text-white'
                 }`
               }
             >
-              <Icon size={18} strokeWidth={2} />
-              <span>{label}</span>
+              <Icon size={18} strokeWidth={2} className="shrink-0" />
+              {!collapsed && <span className="truncate">{label}</span>}
             </NavLink>
           ))}
         </nav>
-        <div className="p-4 border-t border-hgb-700 text-xs">
-          <div className="font-semibold text-white">{user?.name}</div>
-          <div className="text-slate-300 mb-2 capitalize">{user?.roles?.join(', ')}</div>
-          <button onClick={logout} className="inline-flex items-center gap-1.5 text-slate-300 hover:text-white">
-            <LogOut size={14} />
-            Terminar sessão
-          </button>
+
+        <div className={`border-t border-hgb-700 ${collapsed ? 'px-2 py-3' : 'p-4'}`}>
+          {!collapsed && (
+            <div className="text-xs mb-2">
+              <div className="font-semibold text-white truncate">{user?.name}</div>
+              <div className="text-slate-300 capitalize truncate">{user?.roles?.join(', ')}</div>
+            </div>
+          )}
+          <div className={`flex items-center ${collapsed ? 'flex-col gap-2' : 'justify-between gap-2'}`}>
+            <button
+              onClick={logout}
+              title="Terminar sessão"
+              className="inline-flex items-center gap-1.5 text-slate-300 hover:text-white text-xs"
+            >
+              <LogOut size={14} />
+              {!collapsed && <span>Terminar sessão</span>}
+            </button>
+            <button
+              onClick={toggle}
+              title={collapsed ? 'Expandir menu' : 'Recolher menu'}
+              className="inline-flex items-center justify-center w-7 h-7 rounded-md text-slate-300 hover:bg-hgb-700 hover:text-white"
+            >
+              {collapsed ? <ChevronsRight size={16} /> : <ChevronsLeft size={16} />}
+            </button>
+          </div>
         </div>
       </aside>
 

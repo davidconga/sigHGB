@@ -1,0 +1,19 @@
+# macOS
+.DS_Store
+
+# Editors
+.idea/
+.vscode/
+.zed/
+.cursor/
+.codex/
+*.swp
+.vscode-upload.json
+
+# Logs
+*.log
+
+# Build outputs already covered by subdirectory ignores
+
+# Backend signatures (real doctor signatures — never commit)
+backend/storage/app/public/medicos/

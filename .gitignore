@@ -21,3 +21,10 @@ backend/storage/app/public/medicos/
 # Legacy SQL dumps (sensitive: real patient data, hashed passwords)
 legacy/
 *.sql
+
+# Built APK/AAB (uploaded to the VPS separately — too big for git)
+*.apk
+*.aab
+
+# Local Claude project settings
+.claude/

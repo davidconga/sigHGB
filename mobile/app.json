@@ -8,7 +8,11 @@
     "userInterfaceStyle": "light",
     "android": {
       "package": "ao.hgb.sighgb",
-      "permissions": ["NOTIFICATIONS"],
+      "permissions": [
+        "NOTIFICATIONS",
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.USE_FINGERPRINT"
+      ],
       "adaptiveIcon": {
         "backgroundColor": "#143d6b",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -28,12 +32,22 @@
       "expo-status-bar",
       [
         "expo-notifications",
-        { "color": "#1f5fa6" }
+        {
+          "color": "#1f5fa6"
+        }
       ],
       [
         "expo-local-authentication",
-        { "faceIDPermission": "Permite usar Face ID para entrar no SIGHGB." }
+        {
+          "faceIDPermission": "Permite usar Face ID para entrar no SIGHGB."
+        }
       ]
-    ]
+    ],
+    "owner": "davidconga",
+    "extra": {
+      "eas": {
+        "projectId": "da8e7473-f87d-4587-800e-9837422a89b4"
+      }
+    }
   }
 }

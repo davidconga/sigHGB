@@ -14,8 +14,8 @@ function formatBytes(n) {
 export default function Login() {
   const { login } = useAuth()
   const navigate = useNavigate()
-  const [email, setEmail] = useState('admin@hgb.ao')
-  const [password, setPassword] = useState('admin123')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [err, setErr] = useState('')
   const [loading, setLoading] = useState(false)
   const [apk, setApk] = useState(null)
@@ -61,10 +61,6 @@ export default function Login() {
             {loading ? 'A entrar…' : 'Entrar'}
           </button>
         </form>
-        <p className="text-xs text-slate-400 mt-6 text-center">
-          Demo: admin@hgb.ao / admin123
-        </p>
-
         {apk && (
           <a
             href={apk.url}

@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\ExameController;
 use App\Http\Controllers\Api\FuncionarioController;
 use App\Http\Controllers\Api\LocationController;
 use App\Http\Controllers\Api\MedicoController;
+use App\Http\Controllers\Api\PacienteAnexoController;
 use App\Http\Controllers\Api\PacienteController;
 use App\Http\Controllers\Api\RegistrationController;
 use App\Http\Controllers\Api\RelatorioController;
@@ -66,6 +67,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('pacientes', [PacienteController::class, 'store'])->middleware('permission:pacientes.create');
     Route::match(['put', 'patch'], 'pacientes/{paciente}', [PacienteController::class, 'update'])->middleware('permission:pacientes.update');
     Route::delete('pacientes/{paciente}', [PacienteController::class, 'destroy'])->middleware('permission:pacientes.delete');
+
+    // Anexos do paciente (BI, prescrições, etc.)
+    Route::middleware('permission:pacientes.view')->group(function () {
+        Route::get('pacientes/{paciente}/anexos', [PacienteAnexoController::class, 'index']);
+    });
+    Route::post('pacientes/{paciente}/anexos', [PacienteAnexoController::class, 'store'])->middleware('permission:pacientes.update');
+    Route::delete('pacientes/{paciente}/anexos/{anexo}', [PacienteAnexoController::class, 'destroy'])->middleware('permission:pacientes.update');
 
     // Médicos
     Route::middleware('permission:medicos.view')->group(function () {

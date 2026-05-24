@@ -60,4 +60,9 @@ class Paciente extends Model
     {
         return $this->hasMany(Alta::class);
     }
+
+    public function anexos(): HasMany
+    {
+        return $this->hasMany(PacienteAnexo::class);
+    }
 }

@@ -2,7 +2,7 @@
   "expo": {
     "name": "SIGHGB",
     "slug": "sighgb",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -47,6 +47,13 @@
         "expo-local-authentication",
         {
           "faceIDPermission": "Permite usar Face ID para entrar no SIGHGB."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Permite escolher fotos de documentos do paciente da galeria.",
+          "cameraPermission": "Permite fotografar documentos (ex.: BI) e anexar ao processo do paciente."
         }
       ]
     ],

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\ActivityController;
 use App\Http\Controllers\Api\AltaController;
 use App\Http\Controllers\Api\AtestadoController;
 use App\Http\Controllers\Api\AuthController;
@@ -24,8 +25,9 @@ use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\VerificacaoController;
 use Illuminate\Support\Facades\Route;
 
-Route::post('/login', [AuthController::class, 'login']);
-Route::post('/register', [RegistrationController::class, 'register']);
+// Rate limits: login is brute-force vector; register is spam vector.
+Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:10,1');
+Route::post('/register', [RegistrationController::class, 'register'])->middleware('throttle:5,1');
 Route::get('/verificar/{codigo}', [VerificacaoController::class, 'show']);
 Route::get('/registo/opcoes', function () {
     return response()->json([
@@ -60,6 +62,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
+
+    // Audit log
+    Route::get('/activity/{type}/{id}', [ActivityController::class, 'forModel']);
+    Route::middleware('role:admin')->get('/activity', [ActivityController::class, 'index']);
     Route::post('/devices/register', [DeviceController::class, 'register']);
     Route::post('/devices/unregister', [DeviceController::class, 'unregister']);
 

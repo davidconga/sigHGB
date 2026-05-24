@@ -5,10 +5,18 @@ namespace App\Models;
 use App\Models\Concerns\GeraNumeroEVerificacao;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class Atestado extends Model
 {
-    use GeraNumeroEVerificacao;
+    use GeraNumeroEVerificacao, LogsActivity;
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()->logFillable()->logOnlyDirty()->dontSubmitEmptyLogs()->useLogName('atestado');
+    }
+
 
     protected $table = 'atestados';
 

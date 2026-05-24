@@ -15,6 +15,13 @@
   .input { @apply w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-hgb-500 focus:outline-none focus:ring-1 focus:ring-hgb-500; }
   .label { @apply block text-xs font-semibold text-slate-600 mb-1 uppercase tracking-wide; }
   .card { @apply bg-white rounded-lg shadow-sm border border-slate-200; }
+  /* Generic table responsive wrapper — adds horizontal scroll on overflow
+     so long rows do not break layout on small screens. */
+  .card.overflow-hidden > table { @apply min-w-full; }
+  .card.overflow-hidden { @apply overflow-x-auto; }
+  table { @apply w-full; }
+  /* Skeleton placeholder block (pulses). */
+  .skel { @apply bg-slate-200 rounded animate-pulse; }
   .tiptap-content { outline: none; }
   .tiptap-content p { @apply my-1; }
   .tiptap-content ul { @apply list-disc pl-6 my-2; }

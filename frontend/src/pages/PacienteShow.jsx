@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import api, { downloadPdf } from '../api/client'
 import StatusBadge from '../components/StatusBadge'
+import ActivityHistory from '../components/ActivityHistory'
 
 const sexoLabel = (s) => s === 'F' ? 'Feminino' : s === 'M' ? 'Masculino' : '—'
 
@@ -98,6 +99,11 @@ export default function PacienteShow() {
         <DocList title="Exames" items={p.exames} pathPrefix="/exames" labelFn={(e) => `${e.numero} · ${e.tipo_exame}`} />
         <DocList title="Altas hospitalares" items={p.altas} pathPrefix="/altas" labelFn={(a) => `${a.numero} · ${a.condicao_alta}`} />
         <SmsList items={data.sms} />
+      </div>
+
+      <div className="card p-4 mt-4">
+        <div className="text-xs font-semibold text-slate-500 uppercase mb-3">Histórico de alterações</div>
+        <ActivityHistory type="paciente" id={p.id} />
       </div>
     </div>
   )

@@ -4,6 +4,7 @@ import { ArrowLeft, Printer, ShieldCheck, FileCheck2, User, Stethoscope, Calenda
 import api, { downloadPdf } from '../api/client'
 import StatusBadge from '../components/StatusBadge'
 import ValidarAssinaturaModal from '../components/ValidarAssinaturaModal'
+import ActivityHistory from '../components/ActivityHistory'
 
 export default function AtestadoShow() {
   const { id } = useParams()
@@ -87,6 +88,11 @@ export default function AtestadoShow() {
         {a.diagnostico && <Block title="Diagnóstico" html={a.diagnostico} />}
         {a.motivo && <Block title="Finalidade / Motivo" html={a.motivo} />}
         {a.observacoes && <Block title="Observações" html={a.observacoes} />}
+      </div>
+
+      <div className="card p-4 mt-4">
+        <div className="text-xs font-semibold text-slate-500 uppercase mb-3">Histórico de alterações</div>
+        <ActivityHistory type="atestado" id={a.id} />
       </div>
 
       <ValidarAssinaturaModal

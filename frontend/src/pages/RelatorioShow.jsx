@@ -4,6 +4,7 @@ import { ArrowLeft, Printer, ShieldCheck, FileText, User, Stethoscope, Calendar 
 import api, { downloadPdf } from '../api/client'
 import StatusBadge from '../components/StatusBadge'
 import ValidarAssinaturaModal from '../components/ValidarAssinaturaModal'
+import ActivityHistory from '../components/ActivityHistory'
 
 const TIPOS = {
   relatorio_medico: 'Relatório Médico',
@@ -94,6 +95,11 @@ export default function RelatorioShow() {
         {r.recomendacao && <Block title="Recomendação" html={r.recomendacao} />}
         {r.causa_morte && <Block title="Causa da morte" html={r.causa_morte} color="text-red-700" />}
         {r.motivo && <Block title="Motivo" html={r.motivo} />}
+      </div>
+
+      <div className="card p-4 mt-4">
+        <div className="text-xs font-semibold text-slate-500 uppercase mb-3">Histórico de alterações</div>
+        <ActivityHistory type="relatorio" id={r.id} />
       </div>
 
       <ValidarAssinaturaModal

@@ -85,6 +85,56 @@ eas build --platform android --profile preview --local
 
 ---
 
+## Build iOS (.ipa) para iPhone
+
+**Requisitos:**
+- Conta **Apple Developer Program** ($99/ano) — https://developer.apple.com/programs/
+- App ID `ao.hgb.sighgb` registado no portal Apple (EAS faz isto automaticamente na primeira build)
+
+### 1. Configurar credenciais Apple (uma vez)
+```bash
+cd mobile
+eas credentials --platform ios
+# Opção: "Build Credentials" → "Set up build credentials"
+# EAS cria automaticamente o Distribution Certificate + Provisioning Profile
+# usando a tua conta Apple (vai pedir Apple ID + password + 2FA).
+```
+
+### 2. Build para simulador iOS (grátis, sem conta Apple)
+```bash
+eas build --platform ios --profile preview
+# Profile "preview" já tem "simulator": true no eas.json
+# Gera um .app que arrastas para o Xcode → Simulators.
+```
+
+### 3. Build para iPhone real (ad-hoc, até 100 devices)
+```bash
+# Primeiro, regista o UDID do iPhone:
+eas device:create
+
+# Depois:
+eas build --platform ios --profile preview-device
+# Envia link de instalação por SMS/email. Funciona só nos UDIDs registados.
+```
+
+### 4. Build para TestFlight / App Store (recomendado para uso hospitalar)
+```bash
+eas build --platform ios --profile production
+# Gera .ipa assinado para distribuição via App Store Connect.
+# Sem limite de devices; médicos instalam pelo TestFlight app (até 10k testers).
+
+# Submeter para App Store Connect:
+# Antes, preenche eas.json → submit.production.ios:
+#   appleId       = teu Apple ID
+#   ascAppId      = ID da app em App Store Connect (criar app primeiro lá)
+#   appleTeamId   = ID da equipa em developer.apple.com
+eas submit --platform ios --profile production
+```
+
+**Push notifications iOS:** precisam de APNs Key — EAS configura automaticamente quando há conta Apple ligada.
+
+---
+
 ## Próximos passos sugeridos
 
 - [ ] Câmara para fotografar BI / anexar a paciente

@@ -22,7 +22,14 @@
     },
     "ios": {
       "bundleIdentifier": "ao.hgb.sighgb",
-      "supportsTablet": true
+      "supportsTablet": true,
+      "buildNumber": "1",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSFaceIDUsageDescription": "Permite usar Face ID para entrar no SIGHGB.",
+        "NSCameraUsageDescription": "Permite anexar fotos de documentos (BI, prescrições) aos processos clínicos.",
+        "NSPhotoLibraryUsageDescription": "Permite escolher imagens da galeria para anexar aos processos clínicos."
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png"

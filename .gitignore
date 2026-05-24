@@ -17,3 +17,7 @@
 
 # Backend signatures (real doctor signatures — never commit)
 backend/storage/app/public/medicos/
+
+# Legacy SQL dumps (sensitive: real patient data, hashed passwords)
+legacy/
+*.sql

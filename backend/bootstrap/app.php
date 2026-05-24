@@ -18,6 +18,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
         ]);
+        // Promote ?token=... query param into Authorization header before
+        // Sanctum runs, so PDF previews opened as plain links from the mobile
+        // app (Linking.openURL) still authenticate.
+        $middleware->prependToGroup('api', \App\Http\Middleware\AcceptTokenFromQuery::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

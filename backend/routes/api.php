@@ -39,12 +39,20 @@ Route::get('/app/android', function () {
     if (! is_file($path)) {
         return response()->json(['exists' => false]);
     }
+    // Pull the version from mobile/app.json (single source of truth — eas build
+    // reads the same field). Falls back to 1.0.0 if the file can't be read.
+    $version = '1.0.0';
+    $appJson = base_path('../mobile/app.json');
+    if (is_file($appJson)) {
+        $cfg = json_decode(file_get_contents($appJson), true);
+        $version = $cfg['expo']['version'] ?? $version;
+    }
     return response()->json([
         'exists'    => true,
         'url'       => url('/downloads/sighgb.apk'),
         'size'      => filesize($path),
         'updated_at'=> date('c', filemtime($path)),
-        'version'   => '1.0.0',
+        'version'   => $version,
     ]);
 });
 

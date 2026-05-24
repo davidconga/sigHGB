@@ -57,24 +57,30 @@ class SmsController extends Controller
         $data = $request->validate([
             'to' => ['nullable', 'string', 'max:30'],
             'paciente_id' => ['nullable', 'exists:pacientes,id'],
+            'funcionario_id' => ['nullable', 'exists:funcionarios,id'],
             'body' => ['required', 'string', 'max:480'],
             'scheduled_at' => ['nullable', 'date'],
         ]);
 
         $to = $data['to'] ?? null;
         $pacienteId = $data['paciente_id'] ?? null;
+        $funcionarioId = $data['funcionario_id'] ?? null;
 
         if (! $to && $pacienteId) {
-            $to = Paciente::find($pacienteId)?->telefone;
+            $to = \App\Models\Paciente::find($pacienteId)?->telefone;
+        }
+        if (! $to && $funcionarioId) {
+            $to = \App\Models\Funcionario::find($funcionarioId)?->telefone;
         }
         if (! $to) {
-            return response()->json(['message' => 'Destinatário em falta (to ou paciente_id com telefone).'], 422);
+            return response()->json(['message' => 'Destinatário em falta (to, paciente_id ou funcionario_id com telefone).'], 422);
         }
 
         $msg = $this->sms->dispatch(
             to: $to,
             body: $data['body'],
             pacienteId: $pacienteId,
+            funcionarioId: $funcionarioId,
             userId: $request->user()->id,
             scheduledAt: ! empty($data['scheduled_at']) ? Carbon::parse($data['scheduled_at']) : null,
         );

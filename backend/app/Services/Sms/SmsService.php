@@ -72,6 +72,16 @@ class SmsService
 
     public function sendNow(SmsMessage $msg): void
     {
+        if ($this->isFakePlaceholderNumber($msg->to)) {
+            $msg->update([
+                'status' => 'falhado',
+                'sent_at' => now(),
+                'provider' => $this->driver->name(),
+                'error' => 'Numero placeholder/sequencial rejeitado localmente (nao enviado para a operadora — protege saldo).',
+            ]);
+            return;
+        }
+
         $result = $this->driver->send($msg->to, $msg->body);
         $msg->update([
             'status' => $result['ok'] ? 'enviado' : 'falhado',
@@ -80,6 +90,27 @@ class SmsService
             'provider_message_id' => $result['provider_id'] ?? null,
             'error' => $result['error'] ?? null,
         ]);
+    }
+
+    /**
+     * Rejeita numeros obviamente fake — sequencias 000 000 / 000 001 / ...
+     * (placeholders dos seeders demo) ou que nao tenham 9 digitos validos
+     * apos remover prefixos. Evita queimar saldo TelcoSMS em destinos
+     * que a operadora vai rejeitar mas que o gateway ja cobrou.
+     */
+    private function isFakePlaceholderNumber(string $to): bool
+    {
+        $digits = preg_replace('/\D/', '', $to);
+        // Remove country code if 244...
+        if (str_starts_with($digits, '244')) {
+            $digits = substr($digits, 3);
+        }
+        if (strlen($digits) !== 9) return false; // deixa o driver decidir
+        // Sequencias 9XX 000 0NN (000 seguido de 0 e 1-2 digitos)
+        if (preg_match('/^9\d{2}0000\d{2}$/', $digits)) return true;
+        // Todos iguais
+        if (preg_match('/^9(\d)\1{7}$/', $digits)) return true;
+        return false;
     }
 
     /**

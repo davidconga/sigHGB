@@ -1,10 +1,11 @@
 import axios from 'axios'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
-// Em desenvolvimento, aponta para o IP da máquina onde corre `php artisan serve`
-// (não funciona com localhost a partir do telemóvel/emulador físico).
-// Para emulador Android: 10.0.2.2:8000. Para iPhone real: IP da rede local.
-export const API_BASE = 'http://10.0.2.2:8000/api'
+// Production URL is baked in by default. Override for local development
+// via EXPO_PUBLIC_API_URL (e.g. `EXPO_PUBLIC_API_URL=http://192.168.1.50:8000/api npm start`
+// for physical device, or `http://10.0.2.2:8000/api` for Android emulator).
+export const API_BASE =
+  process.env.EXPO_PUBLIC_API_URL || 'https://sig.hgbenguela.com/api'
 
 const api = axios.create({
   baseURL: API_BASE,

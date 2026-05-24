@@ -40,9 +40,9 @@ export default function Layout() {
   }
 
   return (
-    <div className="min-h-screen flex">
+    <div className="h-screen flex overflow-hidden">
       <aside
-        className={`bg-hgb-900 text-slate-100 flex flex-col transition-[width] duration-200 ${
+        className={`bg-hgb-900 text-slate-100 flex flex-col h-screen sticky top-0 transition-[width] duration-200 ${
           collapsed ? 'w-16' : 'w-64'
         }`}
       >

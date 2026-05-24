@@ -61,7 +61,7 @@ export default function Dashboard() {
       )}
 
       {/* ============ COUNTERS ============ */}
-      <div className="grid grid-cols-4 gap-3 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
         {cards.map(({ key, label, to, color, Icon }) => (
           <Link key={key} to={to} className="card p-4 hover:shadow-md transition group">
             <div className="flex items-center gap-3">
@@ -81,7 +81,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-12 gap-4 mb-4">
 
         {/* Atestados últimos 12 meses */}
-        <ChartCard title="Atestados emitidos · últimos 12 meses" cols="col-span-8">
+        <ChartCard title="Atestados emitidos · últimos 12 meses" cols="col-span-12 lg:col-span-8">
           <ResponsiveContainer width="100%" height={260}>
             <BarChart data={atestados_por_mes}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
@@ -94,7 +94,7 @@ export default function Dashboard() {
         </ChartCard>
 
         {/* Relatórios por tipo */}
-        <ChartCard title="Relatórios por tipo" cols="col-span-4">
+        <ChartCard title="Relatórios por tipo" cols="col-span-12 lg:col-span-4">
           <ResponsiveContainer width="100%" height={260}>
             <PieChart>
               <Pie data={relatorios_por_tipo} dataKey="total" nameKey="tipo"
@@ -108,7 +108,7 @@ export default function Dashboard() {
         </ChartCard>
 
         {/* Atestados por efeito */}
-        <ChartCard title="Atestados por efeito (Top 10)" cols="col-span-6">
+        <ChartCard title="Atestados por efeito (Top 10)" cols="col-span-12 lg:col-span-6">
           <ResponsiveContainer width="100%" height={240}>
             <BarChart data={atestados_por_efeito} layout="vertical" margin={{ left: 80 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
@@ -121,7 +121,7 @@ export default function Dashboard() {
         </ChartCard>
 
         {/* SMS últimos 7 dias */}
-        <ChartCard title="SMS · últimos 7 dias" cols="col-span-6">
+        <ChartCard title="SMS · últimos 7 dias" cols="col-span-12 lg:col-span-6">
           <ResponsiveContainer width="100%" height={240}>
             <LineChart data={sms_por_dia}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
@@ -138,7 +138,7 @@ export default function Dashboard() {
           {aniversariantes_proximos.length === 0 ? (
             <div className="text-center text-slate-400 py-8 text-sm">Nenhum aniversário nos próximos 14 dias.</div>
           ) : (
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
               {aniversariantes_proximos.map((f) => (
                 <Link key={f.id} to={`/funcionarios/${f.id}`}
                   className={`p-3 rounded border flex items-center gap-3 transition ${
@@ -167,7 +167,7 @@ export default function Dashboard() {
 
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <MiniCard label="Atestados emitidos" value={counts.atestados_emitidos} total={counts.atestados} color="bg-rose-100 text-rose-700" />
         <MiniCard label="Relatórios emitidos" value={counts.relatorios_emitidos} total={counts.relatorios} color="bg-indigo-100 text-indigo-700" />
         <MiniCard label="SMS enviados" value={counts.sms_enviados} color="bg-emerald-100 text-emerald-700" Icon={MessageSquare} />

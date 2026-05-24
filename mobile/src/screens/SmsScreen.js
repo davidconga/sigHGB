@@ -1,13 +1,13 @@
 import { useCallback, useState } from 'react'
-import { FlatList, RefreshControl, Text, View, ActivityIndicator } from 'react-native'
+import { FlatList, RefreshControl, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { useFocusEffect } from '@react-navigation/native'
 import api from '../api/client'
 import Card from '../components/Card'
 import StatusBadge from '../components/StatusBadge'
-import { colors, font } from '../theme'
+import { colors, font, radius } from '../theme'
 
-export default function SmsScreen() {
+export default function SmsScreen({ navigation }) {
   const [items, setItems] = useState([])
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -39,6 +39,18 @@ export default function SmsScreen() {
           </View>
         </View>
       )}
+
+      <TouchableOpacity
+        onPress={() => navigation.navigate('NovaSms')}
+        style={{
+          position: 'absolute', right: 16, bottom: 24, zIndex: 10,
+          backgroundColor: colors.hgb[600], width: 56, height: 56, borderRadius: 28,
+          alignItems: 'center', justifyContent: 'center',
+          shadowColor: '#000', shadowOpacity: 0.25, shadowOffset: { width: 0, height: 4 }, shadowRadius: 6, elevation: 6,
+        }}
+      >
+        <Ionicons name="add" size={28} color="white" />
+      </TouchableOpacity>
 
       {loading ? <ActivityIndicator color={colors.hgb[600]} style={{ marginTop: 20 }} /> : (
         <FlatList

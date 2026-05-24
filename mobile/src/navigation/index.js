@@ -14,6 +14,7 @@ import RelatorioShowScreen from '../screens/RelatorioShowScreen'
 import PacientesScreen from '../screens/PacientesScreen'
 import PacienteShowScreen from '../screens/PacienteShowScreen'
 import SmsScreen from '../screens/SmsScreen'
+import NovaSmsScreen from '../screens/NovaSmsScreen'
 import PerfilScreen from '../screens/PerfilScreen'
 import ValidarAssinaturaScreen from '../screens/ValidarAssinaturaScreen'
 
@@ -63,6 +64,7 @@ function SmsStack() {
   return (
     <Stack.Navigator screenOptions={screenHeaderOptions}>
       <Stack.Screen name="SmsList" component={SmsScreen} options={{ title: 'SMS' }} />
+      <Stack.Screen name="NovaSms" component={NovaSmsScreen} options={{ title: 'Nova SMS' }} />
     </Stack.Navigator>
   )
 }

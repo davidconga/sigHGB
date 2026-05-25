@@ -20,7 +20,7 @@ class User extends Authenticatable
         return LogOptions::defaults()
             ->logOnly(['name', 'email', 'medico_id', 'ativo', 'registration_status', 'approved_at', 'approved_by'])
             ->logOnlyDirty()
-            ->dontSubmitEmptyLogs()
+            ->dontLogEmptyChanges()
             ->useLogName('user');
     }
 

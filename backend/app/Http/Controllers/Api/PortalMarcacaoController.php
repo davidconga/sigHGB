@@ -177,18 +177,41 @@ class PortalMarcacaoController extends Controller
     }
 
     /**
-     * Consulta publica do estado de uma marcacao. Requer numero do
-     * agendamento + UM segundo factor: telefone OU BI do paciente.
-     * O BI cobre casos onde o paciente usou telefone de terceiro
-     * para marcar e ja nao tem acesso a esse telefone.
+     * Consulta publica do estado de marcacao(oes). Tres modos:
+     *
+     *   1. numero + telefone     -> uma marcacao especifica
+     *   2. numero + bi           -> uma marcacao especifica
+     *   3. apenas bi             -> lista de marcacoes ativas do paciente
+     *
+     * O modo 3 cobre o caso onde o paciente nao se lembra do numero,
+     * usou telefone de terceiro, ou perdeu a SMS. O BI e' suficiente
+     * para identificar o paciente (rate-limit estrito ja aplica).
      */
     public function consultar(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'numero'   => ['required', 'string', 'max:30'],
-            'telefone' => ['required_without:bi', 'nullable', 'string', 'max:30'],
-            'bi'       => ['required_without:telefone', 'nullable', 'string', 'max:20'],
+            'numero'   => ['nullable', 'string', 'max:30'],
+            'telefone' => ['nullable', 'string', 'max:30'],
+            'bi'       => ['nullable', 'string', 'max:20'],
         ]);
+
+        if (empty($data['numero']) && empty($data['bi'])) {
+            return response()->json([
+                'message' => 'Indique pelo menos o BI, ou o número da marcação com telefone/BI.',
+            ], 422);
+        }
+
+        // Modo 3: apenas BI -> lista marcacoes ativas
+        if (empty($data['numero']) && ! empty($data['bi'])) {
+            return $this->listarPorBi($data['bi']);
+        }
+
+        // Modos 1 e 2: numero + (telefone OU bi)
+        if (empty($data['telefone']) && empty($data['bi'])) {
+            return response()->json([
+                'message' => 'Indique telefone ou BI para verificar a sua identidade.',
+            ], 422);
+        }
 
         $ag = Agendamento::with(['paciente:id,nome,telefone,bi', 'medico:id,nome,especialidade'])
             ->where('numero', strtoupper(trim($data['numero'])))
@@ -200,7 +223,6 @@ class PortalMarcacaoController extends Controller
 
         $match = false;
 
-        // Verifica por telefone (match exato ou ultimos 4 digitos)
         if (! empty($data['telefone'])) {
             $tel = preg_replace('/\D/', '', $ag->paciente?->telefone ?? '');
             $tentativa = preg_replace('/\D/', '', $data['telefone']);
@@ -210,7 +232,6 @@ class PortalMarcacaoController extends Controller
             }
         }
 
-        // Verifica por BI (case-insensitive, sem espacos)
         if (! $match && ! empty($data['bi'])) {
             $biGuardado = strtoupper(preg_replace('/\s+/', '', $ag->paciente?->bi ?? ''));
             $biTentativa = strtoupper(preg_replace('/\s+/', '', $data['bi']));
@@ -225,6 +246,38 @@ class PortalMarcacaoController extends Controller
             ], 403);
         }
 
+        return response()->json($this->marcacaoPayload($ag));
+    }
+
+    private function listarPorBi(string $bi): JsonResponse
+    {
+        $biNorm = strtoupper(preg_replace('/\s+/', '', $bi));
+        $paciente = Paciente::whereRaw('UPPER(REPLACE(bi, " ", "")) = ?', [$biNorm])->first();
+
+        if (! $paciente) {
+            return response()->json(['message' => 'Nenhum paciente encontrado com este BI.'], 404);
+        }
+
+        $marcacoes = Agendamento::with(['medico:id,nome,especialidade'])
+            ->where('paciente_id', $paciente->id)
+            ->where(function ($q) {
+                // ativas (nao realizadas ha mais de 30 dias)
+                $q->whereNotIn('status', ['realizada', 'cancelada', 'faltou'])
+                  ->orWhere('data_agendamento', '>=', now()->subDays(30));
+            })
+            ->orderByDesc('data_agendamento')
+            ->limit(20)
+            ->get();
+
+        return response()->json([
+            'paciente_primeiro_nome' => explode(' ', trim($paciente->nome))[0] ?? '',
+            'marcacoes' => $marcacoes->map(fn ($ag) => $this->marcacaoPayload($ag, $paciente))->values(),
+        ]);
+    }
+
+    private function marcacaoPayload(Agendamento $ag, ?Paciente $paciente = null): array
+    {
+        $paciente ??= $ag->paciente;
         $statusLabels = [
             'pendente'       => 'Pendente de aprovação pela recepção',
             'confirmada'     => 'Confirmada',
@@ -235,7 +288,7 @@ class PortalMarcacaoController extends Controller
             'faltou'         => 'Marcada como faltou',
         ];
 
-        return response()->json([
+        return [
             'numero'              => $ag->numero,
             'status'              => $ag->status,
             'status_label'        => $statusLabels[$ag->status] ?? $ag->status,
@@ -246,8 +299,8 @@ class PortalMarcacaoController extends Controller
             'motivo_cancelamento' => $ag->motivo_cancelamento,
             'check_in_em'         => $ag->check_in_em?->toIso8601String(),
             'criado_em'           => $ag->created_at->toIso8601String(),
-            'paciente_primeiro_nome' => explode(' ', trim($ag->paciente?->nome ?? ''))[0] ?? '',
-        ]);
+            'paciente_primeiro_nome' => explode(' ', trim($paciente?->nome ?? ''))[0] ?? '',
+        ];
     }
 
     /**

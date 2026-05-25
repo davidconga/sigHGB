@@ -7,7 +7,6 @@ use App\Models\Agendamento;
 use App\Models\Medico;
 use App\Models\Paciente;
 use App\Models\PortalMarcacaoSession;
-use App\Models\Servico;
 use App\Services\SlotResolver;
 use App\Services\Sms\SmsService;
 use Carbon\Carbon;
@@ -32,22 +31,32 @@ class PortalMarcacaoController extends Controller
 
     /**
      * Lista publica de medicos ativos (apenas campos seguros).
+     * Opcionalmente filtra por especialidade.
      */
-    public function medicos(): JsonResponse
+    public function medicos(Request $request): JsonResponse
     {
+        $q = Medico::where('ativo', true)->orderBy('nome');
+        if ($esp = $request->string('especialidade')->trim()->value()) {
+            $q->where('especialidade', $esp);
+        }
         return response()->json([
-            'data' => Medico::where('ativo', true)
-                ->orderBy('nome')
-                ->get(['id', 'nome', 'especialidade']),
+            'data' => $q->get(['id', 'nome', 'especialidade']),
         ]);
     }
 
-    public function servicos(): JsonResponse
+    /**
+     * Especialidades distintas com contagem de medicos disponiveis.
+     */
+    public function especialidades(): JsonResponse
     {
         return response()->json([
-            'data' => Servico::with('departamento:id,nome')
-                ->orderBy('nome')
-                ->get(['id', 'nome', 'departamento_id']),
+            'data' => Medico::where('ativo', true)
+                ->whereNotNull('especialidade')
+                ->where('especialidade', '!=', '')
+                ->selectRaw('especialidade, count(*) as medicos_count')
+                ->groupBy('especialidade')
+                ->orderBy('especialidade')
+                ->get(),
         ]);
     }
 
@@ -112,8 +121,7 @@ class PortalMarcacaoController extends Controller
             'paciente_novo.data_nascimento' => ['required_with:paciente_novo', 'date', 'before:today'],
             'paciente_novo.sexo'            => ['nullable', 'in:M,F'],
             // Marcacao
-            'medico_id'        => ['nullable', 'exists:medicos,id'],
-            'servico_id'       => ['nullable', 'exists:servicos,id'],
+            'medico_id'        => ['required', 'exists:medicos,id'],
             'data_agendamento' => ['required', 'date', 'after:now'],
             'duracao_minutos'  => ['nullable', 'integer', 'min:5', 'max:480'],
             'motivo'           => ['nullable', 'string', 'max:500'],
@@ -121,27 +129,18 @@ class PortalMarcacaoController extends Controller
             'telefone'         => ['required', 'string', 'max:30'],
         ]);
 
-        if (empty($data['medico_id']) && empty($data['servico_id'])) {
+        // Validar slot do medico escolhido
+        $medico = Medico::find($data['medico_id']);
+        $erro = $this->slotResolver->validar(
+            $medico,
+            Carbon::parse($data['data_agendamento']),
+            (int) ($data['duracao_minutos'] ?? 30),
+        );
+        if ($erro) {
             return response()->json([
-                'message' => 'Indique pelo menos um médico ou um serviço.',
-                'errors'  => ['medico_id' => ['Escolha um médico ou serviço.']],
+                'message' => $erro,
+                'errors'  => ['data_agendamento' => [$erro]],
             ], 422);
-        }
-
-        // Validar slot se medico foi escolhido
-        if (! empty($data['medico_id'])) {
-            $medico = Medico::find($data['medico_id']);
-            $erro = $this->slotResolver->validar(
-                $medico,
-                Carbon::parse($data['data_agendamento']),
-                (int) ($data['duracao_minutos'] ?? 30),
-            );
-            if ($erro) {
-                return response()->json([
-                    'message' => $erro,
-                    'errors'  => ['data_agendamento' => [$erro]],
-                ], 422);
-            }
         }
 
         // Gerar codigo 6 digitos
@@ -154,8 +153,7 @@ class PortalMarcacaoController extends Controller
             'paciente_id'    => $data['paciente_id'] ?? null,
             'paciente_novo'  => $data['paciente_novo'] ?? null,
             'marcacao_dados' => [
-                'medico_id'        => $data['medico_id'] ?? null,
-                'servico_id'       => $data['servico_id'] ?? null,
+                'medico_id'        => $data['medico_id'],
                 'data_agendamento' => $data['data_agendamento'],
                 'duracao_minutos'  => (int) ($data['duracao_minutos'] ?? 30),
                 'motivo'           => $data['motivo'] ?? null,
@@ -190,7 +188,7 @@ class PortalMarcacaoController extends Controller
             'telefone' => ['required', 'string', 'max:30'],
         ]);
 
-        $ag = Agendamento::with(['paciente:id,nome,telefone', 'medico:id,nome,especialidade', 'servico:id,nome'])
+        $ag = Agendamento::with(['paciente:id,nome,telefone', 'medico:id,nome,especialidade'])
             ->where('numero', strtoupper(trim($data['numero'])))
             ->first();
 
@@ -225,7 +223,6 @@ class PortalMarcacaoController extends Controller
             'data_agendamento'    => $ag->data_agendamento->toIso8601String(),
             'duracao_minutos'     => $ag->duracao_minutos,
             'medico'              => $ag->medico ? ['nome' => $ag->medico->nome, 'especialidade' => $ag->medico->especialidade] : null,
-            'servico'             => $ag->servico ? ['nome' => $ag->servico->nome] : null,
             'motivo'              => $ag->motivo,
             'motivo_cancelamento' => $ag->motivo_cancelamento,
             'check_in_em'         => $ag->check_in_em?->toIso8601String(),
@@ -308,7 +305,6 @@ class PortalMarcacaoController extends Controller
         $agendamento = Agendamento::create([
             'paciente_id'      => $pacienteId,
             'medico_id'        => $m['medico_id'] ?? null,
-            'servico_id'       => $m['servico_id'] ?? null,
             'data_agendamento' => $m['data_agendamento'],
             'duracao_minutos'  => $m['duracao_minutos'] ?? 30,
             'motivo'           => $m['motivo'] ?? null,

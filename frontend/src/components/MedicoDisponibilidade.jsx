@@ -9,9 +9,8 @@ const DIAS = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sáb
 export default function MedicoDisponibilidade({ medicoId }) {
   const confirm = useConfirm()
   const [data, setData] = useState({ disponibilidades: [], ausencias: [] })
-  const [servicos, setServicos] = useState([])
   const [openDisp, setOpenDisp] = useState(false)
-  const [formDisp, setFormDisp] = useState({ dia_semana: 1, hora_inicio: '08:00', hora_fim: '12:00', duracao_minutos: 30, servico_id: '', ativo: true })
+  const [formDisp, setFormDisp] = useState({ dia_semana: 1, hora_inicio: '08:00', hora_fim: '12:00', duracao_minutos: 30, ativo: true })
   const [errorsDisp, setErrorsDisp] = useState({})
   const [openAus, setOpenAus] = useState(false)
   const [formAus, setFormAus] = useState({ inicio: '', fim: '', motivo: '' })
@@ -22,21 +21,16 @@ export default function MedicoDisponibilidade({ medicoId }) {
     setData(data)
   }
   useEffect(() => { load() }, [medicoId])
-  useEffect(() => {
-    api.get('/servicos').then((r) => setServicos(r.data.data || r.data || [])).catch(() => {})
-  }, [])
 
   function openNovoBloco(diaSemana = 1) {
-    setFormDisp({ dia_semana: diaSemana, hora_inicio: '08:00', hora_fim: '12:00', duracao_minutos: 30, servico_id: '', ativo: true })
+    setFormDisp({ dia_semana: diaSemana, hora_inicio: '08:00', hora_fim: '12:00', duracao_minutos: 30, ativo: true })
     setErrorsDisp({}); setOpenDisp(true)
   }
 
   async function guardarBloco(e) {
     e.preventDefault(); setErrorsDisp({})
     try {
-      const payload = { ...formDisp }
-      if (!payload.servico_id) payload.servico_id = null
-      await api.post(`/medicos/${medicoId}/disponibilidades`, payload)
+      await api.post(`/medicos/${medicoId}/disponibilidades`, formDisp)
       setOpenDisp(false); load()
     } catch (e) {
       setErrorsDisp(e.response?.data?.errors || { _: [e.response?.data?.message || 'Erro'] })
@@ -100,7 +94,6 @@ export default function MedicoDisponibilidade({ medicoId }) {
                     <span className="font-mono">{b.hora_inicio.slice(0, 5)}–{b.hora_fim.slice(0, 5)}</span>
                     <span className="text-slate-500">·</span>
                     <span>{b.duracao_minutos}min</span>
-                    {b.servico && <><span className="text-slate-500">·</span><span>{b.servico.nome}</span></>}
                     <button onClick={() => removerBloco(b.id)} className="opacity-0 group-hover:opacity-100 text-red-600 hover:bg-red-100 rounded p-0.5 transition">
                       <Trash2 size={12} />
                     </button>
@@ -177,13 +170,6 @@ export default function MedicoDisponibilidade({ medicoId }) {
               <label className="label">Slot (min)</label>
               <input type="number" min={5} max={480} step={5} className="input" value={formDisp.duracao_minutos} onChange={(e) => setFormDisp({ ...formDisp, duracao_minutos: Number(e.target.value) })} />
             </div>
-          </div>
-          <div>
-            <label className="label">Serviço (opcional)</label>
-            <select className="input" value={formDisp.servico_id} onChange={(e) => setFormDisp({ ...formDisp, servico_id: e.target.value })}>
-              <option value="">— qualquer —</option>
-              {servicos.map((s) => <option key={s.id} value={s.id}>{s.nome}</option>)}
-            </select>
           </div>
           {errorsDisp._ && <p className="text-sm text-red-600">{errorsDisp._[0]}</p>}
           {Object.entries(errorsDisp).filter(([k]) => k !== '_').map(([k, v]) => (

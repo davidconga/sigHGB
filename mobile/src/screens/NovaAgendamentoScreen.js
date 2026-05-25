@@ -14,9 +14,7 @@ export default function NovaAgendamentoScreen({ navigation }) {
   const [searching, setSearching] = useState(false)
 
   const [medicos, setMedicos] = useState([])
-  const [servicos, setServicos] = useState([])
   const [medicoId, setMedicoId] = useState('')
-  const [servicoId, setServicoId] = useState('')
 
   const amanha = (() => {
     const d = new Date(); d.setDate(d.getDate() + 1); return d
@@ -31,7 +29,6 @@ export default function NovaAgendamentoScreen({ navigation }) {
   useEffect(() => {
     api.get('/medicos', { params: { per_page: 500, apenas_ativos: 1 } })
       .then((r) => setMedicos(r.data.data || [])).catch(() => {})
-    api.get('/servicos').then((r) => setServicos(r.data.data || r.data || [])).catch(() => {})
   }, [])
 
   useEffect(() => {
@@ -64,7 +61,6 @@ export default function NovaAgendamentoScreen({ navigation }) {
       await api.post('/agendamentos', {
         paciente_id: paciente.id,
         medico_id: medicoId || null,
-        servico_id: servicoId || null,
         data_agendamento: dataHora.toISOString(),
         duracao_minutos: Number(duracao) || 30,
         motivo: motivo || null,
@@ -145,19 +141,6 @@ export default function NovaAgendamentoScreen({ navigation }) {
               <Chip selected={!medicoId} onPress={() => setMedicoId('')} label="— nenhum —" />
               {medicos.map((m) => (
                 <Chip key={m.id} selected={medicoId === m.id} onPress={() => setMedicoId(m.id)} label={m.nome} />
-              ))}
-            </View>
-          </ScrollView>
-        </View>
-
-        {/* Serviço */}
-        <View style={{ backgroundColor: 'white', borderRadius: radius.lg, padding: 12, marginBottom: 10 }}>
-          <Text style={{ fontSize: font.xs, color: colors.slate[600], marginBottom: 6, fontWeight: '600' }}>SERVIÇO</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <View style={{ flexDirection: 'row', gap: 6 }}>
-              <Chip selected={!servicoId} onPress={() => setServicoId('')} label="— nenhum —" />
-              {servicos.map((s) => (
-                <Chip key={s.id} selected={servicoId === s.id} onPress={() => setServicoId(s.id)} label={s.nome} />
               ))}
             </View>
           </ScrollView>

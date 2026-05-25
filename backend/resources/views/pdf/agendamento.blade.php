@@ -21,10 +21,6 @@
             <td class="label">Especialidade:</td>
             <td>{{ $agendamento->medico?->especialidade ?? '—' }}</td>
         </tr>
-        <tr>
-            <td class="label">Serviço:</td>
-            <td colspan="3">{{ $agendamento->servico?->nome ?? '—' }}</td>
-        </tr>
     </table>
 
     @if($agendamento->motivo)

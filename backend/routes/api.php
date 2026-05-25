@@ -43,7 +43,7 @@ Route::get('/registo/opcoes', function () {
 // Iniciar tem limite mais apertado porque cada chamada gera SMS.
 Route::prefix('portal')->group(function () {
     Route::get('/medicos', [PortalMarcacaoController::class, 'medicos'])->middleware('throttle:120,1');
-    Route::get('/servicos', [PortalMarcacaoController::class, 'servicos'])->middleware('throttle:120,1');
+    Route::get('/especialidades', [PortalMarcacaoController::class, 'especialidades'])->middleware('throttle:120,1');
     Route::get('/medicos/{medico}/slots', [PortalMarcacaoController::class, 'slots'])->middleware('throttle:120,1');
     Route::post('/verificar-paciente', [PortalMarcacaoController::class, 'verificarPaciente'])->middleware('throttle:30,1');
     Route::post('/iniciar', [PortalMarcacaoController::class, 'iniciar'])->middleware('throttle:10,1');

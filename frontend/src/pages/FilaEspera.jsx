@@ -12,8 +12,7 @@ const STATUS_LABEL = {
 export default function FilaEspera() {
   const confirm = useConfirm()
   const { medicos } = useLookups()
-  const [servicos, setServicos] = useState([])
-  const [filters, setFilters] = useState({ medico_id: '', servico_id: '' })
+  const [filters, setFilters] = useState({ medico_id: '' })
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(false)
 
@@ -22,7 +21,6 @@ export default function FilaEspera() {
     try {
       const params = {}
       if (filters.medico_id) params.medico_id = filters.medico_id
-      if (filters.servico_id) params.servico_id = filters.servico_id
       const { data } = await api.get('/agendamentos/fila', { params })
       setItems(data.data || [])
     } finally { setLoading(false) }
@@ -30,7 +28,6 @@ export default function FilaEspera() {
 
   useEffect(() => { load() }, [filters])
   useEffect(() => {
-    api.get('/servicos').then((r) => setServicos(r.data.data || r.data || [])).catch(() => {})
     const t = setInterval(load, 30000)
     return () => clearInterval(t)
   }, [])
@@ -60,13 +57,6 @@ export default function FilaEspera() {
 
       <div className="card p-3 mb-4 flex flex-wrap items-end gap-3">
         <div>
-          <label className="label">Serviço</label>
-          <select className="input" value={filters.servico_id} onChange={(e) => setFilters({ ...filters, servico_id: e.target.value })}>
-            <option value="">Todos</option>
-            {servicos.map((s) => <option key={s.id} value={s.id}>{s.nome}</option>)}
-          </select>
-        </div>
-        <div>
           <label className="label">Médico</label>
           <select className="input" value={filters.medico_id} onChange={(e) => setFilters({ ...filters, medico_id: e.target.value })}>
             <option value="">Todos</option>
@@ -86,7 +76,7 @@ export default function FilaEspera() {
               <th className="text-left px-4 py-2">Paciente</th>
               <th className="text-left px-4 py-2">Nº processo</th>
               <th className="text-left px-4 py-2">Marcação</th>
-              <th className="text-left px-4 py-2">Médico/Serviço</th>
+              <th className="text-left px-4 py-2">Médico</th>
               <th className="text-left px-4 py-2">Check-in</th>
               <th className="text-left px-4 py-2">Espera</th>
               <th className="text-left px-4 py-2">Estado</th>
@@ -102,7 +92,7 @@ export default function FilaEspera() {
                 <td className="px-4 py-2 whitespace-nowrap">
                   {new Date(a.data_agendamento).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })}
                 </td>
-                <td className="px-4 py-2">{a.medico?.nome || a.servico?.nome || '—'}</td>
+                <td className="px-4 py-2">{a.medico?.nome || '—'}</td>
                 <td className="px-4 py-2 whitespace-nowrap">
                   {a.check_in_em ? new Date(a.check_in_em).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }) : '—'}
                 </td>

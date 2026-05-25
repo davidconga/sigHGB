@@ -32,7 +32,6 @@ class AgendamentoController extends Controller
             Agendamento::with([
                 'paciente:id,nome,numero_processo,telefone',
                 'medico:id,nome,especialidade',
-                'servico:id,nome,departamento_id',
                 'criadoPor:id,name',
             ])
         );
@@ -42,9 +41,6 @@ class AgendamentoController extends Controller
         }
         if ($mid = $request->integer('medico_id')) {
             $query->where('medico_id', $mid);
-        }
-        if ($sid = $request->integer('servico_id')) {
-            $query->where('servico_id', $sid);
         }
         if ($status = $request->string('status')->value()) {
             $query->where('status', $status);
@@ -69,7 +65,6 @@ class AgendamentoController extends Controller
         $data = $request->validate([
             'paciente_id'        => ['required', 'exists:pacientes,id'],
             'medico_id'          => ['nullable', 'exists:medicos,id'],
-            'servico_id'         => ['nullable', 'exists:servicos,id'],
             'data_agendamento'   => ['required', 'date', 'after_or_equal:today'],
             'duracao_minutos'    => ['nullable', 'integer', 'min:5', 'max:480'],
             'motivo'             => ['nullable', 'string', 'max:500'],
@@ -110,13 +105,13 @@ class AgendamentoController extends Controller
             $this->enviarSmsConfirmacao($ag);
         }
 
-        return response()->json($ag->load(['paciente', 'medico', 'servico']), 201);
+        return response()->json($ag->load(['paciente', 'medico']), 201);
     }
 
     public function show(Agendamento $agendamento): JsonResponse
     {
         $this->guard($agendamento);
-        return response()->json($agendamento->load(['paciente', 'medico', 'servico', 'consulta', 'criadoPor']));
+        return response()->json($agendamento->load(['paciente', 'medico', 'consulta', 'criadoPor']));
     }
 
     public function update(Request $request, Agendamento $agendamento): JsonResponse
@@ -125,7 +120,6 @@ class AgendamentoController extends Controller
 
         $data = $request->validate([
             'medico_id'            => ['nullable', 'exists:medicos,id'],
-            'servico_id'           => ['nullable', 'exists:servicos,id'],
             'data_agendamento'     => ['sometimes', 'date'],
             'duracao_minutos'      => ['nullable', 'integer', 'min:5', 'max:480'],
             'motivo'               => ['nullable', 'string', 'max:500'],
@@ -160,7 +154,7 @@ class AgendamentoController extends Controller
             $this->enviarSmsRemarcacao($agendamento->fresh());
         }
 
-        return response()->json($agendamento->load(['paciente', 'medico', 'servico']));
+        return response()->json($agendamento->load(['paciente', 'medico']));
     }
 
     public function destroy(Agendamento $agendamento): JsonResponse
@@ -186,9 +180,9 @@ class AgendamentoController extends Controller
             'check_in_em' => now(),
         ]);
 
-        $this->notificarMedicoCheckIn($agendamento->fresh()->load(['paciente', 'medico', 'servico']));
+        $this->notificarMedicoCheckIn($agendamento->fresh()->load(['paciente', 'medico']));
 
-        return response()->json($agendamento->load(['paciente', 'medico', 'servico']));
+        return response()->json($agendamento->load(['paciente', 'medico']));
     }
 
     private function notificarMedicoCheckIn(Agendamento $ag): void
@@ -196,8 +190,7 @@ class AgendamentoController extends Controller
         if (! $ag->medico_id) return;
 
         $hora = $ag->data_agendamento->format('H:i');
-        $servico = $ag->servico?->nome ? " ({$ag->servico->nome})" : '';
-        $body = "Paciente {$ag->paciente?->nome} fez check-in para a marcacao das {$hora}{$servico}.";
+        $body = "Paciente {$ag->paciente?->nome} fez check-in para a marcacao das {$hora}.";
 
         User::where('medico_id', $ag->medico_id)->each(function (User $u) use ($ag, $body) {
             $this->push->sendToUser(
@@ -229,7 +222,7 @@ class AgendamentoController extends Controller
 
         $this->enviarSmsCancelamento($agendamento->fresh());
 
-        return response()->json($agendamento->load(['paciente', 'medico', 'servico']));
+        return response()->json($agendamento->load(['paciente', 'medico']));
     }
 
     public function agenda(Request $request): JsonResponse
@@ -241,7 +234,7 @@ class AgendamentoController extends Controller
         ]);
 
         $query = MedicoScope::apply(
-            Agendamento::with(['paciente:id,nome,telefone', 'medico:id,nome', 'servico:id,nome'])
+            Agendamento::with(['paciente:id,nome,telefone', 'medico:id,nome'])
                 ->whereDate('data_agendamento', '>=', $data['data_de'])
                 ->whereDate('data_agendamento', '<=', $data['data_ate'])
                 ->whereNotIn('status', ['cancelada', 'faltou'])
@@ -263,7 +256,7 @@ class AgendamentoController extends Controller
     public function porPaciente(Request $request, int $paciente): JsonResponse
     {
         $items = MedicoScope::apply(
-            Agendamento::with(['medico:id,nome', 'servico:id,nome'])
+            Agendamento::with(['medico:id,nome'])
                 ->where('paciente_id', $paciente)
                 ->ativos()
                 ->orderBy('data_agendamento')
@@ -275,14 +268,11 @@ class AgendamentoController extends Controller
     public function fila(Request $request): JsonResponse
     {
         $query = MedicoScope::apply(
-            Agendamento::with(['paciente:id,nome,numero_processo', 'medico:id,nome', 'servico:id,nome'])
+            Agendamento::with(['paciente:id,nome,numero_processo', 'medico:id,nome'])
                 ->naFila()
                 ->doDia($request->date('data')?->toDateString())
         );
 
-        if ($sid = $request->integer('servico_id')) {
-            $query->where('servico_id', $sid);
-        }
         if ($mid = $request->integer('medico_id')) {
             $query->where('medico_id', $mid);
         }
@@ -336,25 +326,6 @@ class AgendamentoController extends Controller
             ->sortByDesc('total')
             ->values();
 
-        $porServico = (clone $base)
-            ->with('servico:id,nome')
-            ->selectRaw('servico_id, status, count(*) as total')
-            ->groupBy('servico_id', 'status')
-            ->get()
-            ->groupBy('servico_id')
-            ->map(function ($linhas, $servicoId) {
-                $primeira = $linhas->first();
-                $totais = $linhas->pluck('total', 'status')->all();
-                return [
-                    'servico_id' => $servicoId,
-                    'servico'    => $primeira->servico?->nome ?? '— sem serviço —',
-                    'total'      => array_sum($totais),
-                    'por_estado' => $totais,
-                ];
-            })
-            ->sortByDesc('total')
-            ->values();
-
         $porDia = (clone $base)
             ->selectRaw("strftime('%Y-%m-%d', data_agendamento) as dia, count(*) as total")
             ->groupBy('dia')
@@ -386,7 +357,6 @@ class AgendamentoController extends Controller
                 'taxa_conclusao'    => $taxaConclusao,
             ],
             'por_medico'  => $porMedico,
-            'por_servico' => $porServico,
             'por_dia'     => $porDia,
         ]);
     }
@@ -430,7 +400,7 @@ class AgendamentoController extends Controller
     public function pdf(Agendamento $agendamento): Response
     {
         $this->guard($agendamento);
-        $agendamento->load(['paciente', 'medico', 'servico', 'criadoPor']);
+        $agendamento->load(['paciente', 'medico', 'criadoPor']);
         $pdf = Pdf::loadView('pdf.agendamento', ['agendamento' => $agendamento]);
 
         return $pdf->stream("marcacao-{$agendamento->numero}.pdf");
@@ -500,8 +470,7 @@ class AgendamentoController extends Controller
 
         $quando = $ag->data_agendamento->format('d/m/Y \à\s H:i');
         $medico = $ag->medico_id ? optional($ag->medico()->first())->nome : null;
-        $servico = $ag->servico_id ? optional($ag->servico()->first())->nome : null;
-        $alvo = $medico ? "Dr(a). {$medico}" : ($servico ?? 'consulta');
+        $alvo = $medico ? "Dr(a). {$medico}" : 'consulta';
 
         $body = "HGB: Marcacao {$ag->numero} confirmada para {$quando} com {$alvo}. Compareca 15min antes.";
 

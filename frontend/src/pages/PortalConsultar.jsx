@@ -144,9 +144,6 @@ function Resultado({ resultado, onReiniciar }) {
           <Row Icon={Stethoscope} label="Médico"
             value={<>{resultado.medico.nome}{resultado.medico.especialidade && <span className="text-slate-500"> · {resultado.medico.especialidade}</span>}</>} />
         )}
-        {resultado.servico && (
-          <Row Icon={User} label="Serviço" value={resultado.servico.nome} />
-        )}
         {resultado.motivo && (
           <Row label="Motivo" value={resultado.motivo} />
         )}

@@ -11,7 +11,7 @@ class Agendamento extends Model
     protected $table = 'agendamentos';
 
     protected $fillable = [
-        'numero', 'paciente_id', 'medico_id', 'servico_id',
+        'numero', 'paciente_id', 'medico_id',
         'data_agendamento', 'duracao_minutos', 'motivo', 'observacoes',
         'status', 'origem', 'consulta_id', 'criado_por',
         'check_in_em', 'cancelado_em', 'motivo_cancelamento',
@@ -44,11 +44,6 @@ class Agendamento extends Model
     public function medico(): BelongsTo
     {
         return $this->belongsTo(Medico::class);
-    }
-
-    public function servico(): BelongsTo
-    {
-        return $this->belongsTo(Servico::class);
     }
 
     public function consulta(): BelongsTo

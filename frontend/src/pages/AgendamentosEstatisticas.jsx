@@ -140,43 +140,6 @@ export default function AgendamentosEstatisticas() {
             </table>
           </div>
 
-          {/* Por serviço */}
-          <div className="card mb-4 overflow-hidden">
-            <div className="px-4 py-3 border-b border-slate-200 flex items-center justify-between">
-              <h2 className="text-sm font-bold uppercase tracking-wide text-slate-600">Por serviço</h2>
-              <span className="text-xs text-slate-500">{stats.por_servico.length} serviço(s)</span>
-            </div>
-            <table className="w-full text-sm">
-              <thead className="bg-slate-50 text-slate-600 text-xs uppercase">
-                <tr>
-                  <th className="text-left px-4 py-2">Serviço</th>
-                  {ESTADOS.map((e) => (
-                    <th key={e.key} className="text-right px-2 py-2" title={e.label}>
-                      <span className="inline-block w-2 h-2 rounded-full mr-1" style={{ backgroundColor: e.color }}></span>
-                      {e.label.slice(0, 4)}.
-                    </th>
-                  ))}
-                  <th className="text-right px-4 py-2">Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                {stats.por_servico.map((s) => (
-                  <tr key={s.servico_id || 'sem'} className="border-t border-slate-100 hover:bg-slate-50">
-                    <td className="px-4 py-2 font-medium">{s.servico}</td>
-                    {ESTADOS.map((e) => (
-                      <td key={e.key} className="text-right px-2 py-2 font-mono">
-                        {s.por_estado[e.key] || 0}
-                      </td>
-                    ))}
-                    <td className="text-right px-4 py-2 font-bold">{s.total}</td>
-                  </tr>
-                ))}
-                {stats.por_servico.length === 0 && (
-                  <tr><td colSpan={ESTADOS.length + 2} className="px-4 py-6 text-center text-slate-400">Sem dados no período.</td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
         </>
       )}
     </div>

@@ -9,7 +9,6 @@
     @php
         $totais = $stats['totais'];
         $porMedico = $stats['por_medico'];
-        $porServico = $stats['por_servico'];
         $ordemEstados = ['pendente', 'confirmada', 'presente', 'em_atendimento', 'realizada', 'cancelada', 'faltou'];
         $labelEstados = [
             'pendente' => 'Pend.',
@@ -86,34 +85,6 @@
                                 <td style="text-align:right; padding:4px 6px; border:1px solid #e5e7eb;">{{ $m['por_estado'][$st] ?? 0 }}</td>
                             @endforeach
                             <td style="text-align:right; padding:4px 6px; border:1px solid #e5e7eb; font-weight:bold;">{{ $m['total'] }}</td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-    @endif
-
-    @if(count($porServico))
-        <div class="box">
-            <h3>Por serviço</h3>
-            <table style="width:100%; border-collapse: collapse; font-size: 10px;">
-                <thead>
-                    <tr style="background:#f3f4f6;">
-                        <th style="text-align:left; padding:4px 6px; border:1px solid #e5e7eb;">Serviço</th>
-                        @foreach($ordemEstados as $st)
-                            <th style="text-align:right; padding:4px 6px; border:1px solid #e5e7eb;">{{ $labelEstados[$st] }}</th>
-                        @endforeach
-                        <th style="text-align:right; padding:4px 6px; border:1px solid #e5e7eb;">Total</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($porServico as $s)
-                        <tr>
-                            <td style="padding:4px 6px; border:1px solid #e5e7eb;">{{ $s['servico'] }}</td>
-                            @foreach($ordemEstados as $st)
-                                <td style="text-align:right; padding:4px 6px; border:1px solid #e5e7eb;">{{ $s['por_estado'][$st] ?? 0 }}</td>
-                            @endforeach
-                            <td style="text-align:right; padding:4px 6px; border:1px solid #e5e7eb; font-weight:bold;">{{ $s['total'] }}</td>
                         </tr>
                     @endforeach
                 </tbody>

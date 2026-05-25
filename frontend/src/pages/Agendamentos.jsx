@@ -31,7 +31,6 @@ const STATUS_CLASSES = {
 const empty = {
   paciente_id: '',
   medico_id: '',
-  servico_id: '',
   data_agendamento: '',
   duracao_minutos: 30,
   motivo: '',
@@ -43,7 +42,6 @@ const empty = {
 export default function Agendamentos() {
   const confirm = useConfirm()
   const { medicos } = useLookups()
-  const [servicos, setServicos] = useState([])
   const [list, setList] = useState({ data: [], current_page: 1, last_page: 1, total: 0 })
   const [page, setPage] = useState(1)
   const [filters, setFilters] = useState({ status: '', medico_id: '', data_de: '', data_ate: '' })
@@ -76,7 +74,6 @@ export default function Agendamentos() {
   useEffect(() => { loadPendentes() }, [filters.status])
 
   useEffect(() => {
-    api.get('/servicos').then((r) => setServicos(r.data.data || r.data || [])).catch(() => {})
   }, [])
 
   // Carregar slots disponíveis quando médico + data mudam (apenas em criação)
@@ -105,7 +102,6 @@ export default function Agendamentos() {
       id: a.id,
       paciente_id: a.paciente_id,
       medico_id: a.medico_id || '',
-      servico_id: a.servico_id || '',
       data_agendamento: a.data_agendamento ? new Date(a.data_agendamento).toISOString().slice(0, 16) : '',
       duracao_minutos: a.duracao_minutos ?? 30,
       motivo: a.motivo || '',
@@ -211,7 +207,6 @@ export default function Agendamentos() {
               <th className="text-left px-4 py-2">Data/Hora</th>
               <th className="text-left px-4 py-2">Paciente</th>
               <th className="text-left px-4 py-2">Médico</th>
-              <th className="text-left px-4 py-2">Serviço</th>
               <th className="text-left px-4 py-2">Estado</th>
               <th className="text-right px-4 py-2">Ações</th>
             </tr>
@@ -223,7 +218,6 @@ export default function Agendamentos() {
                 <td className="px-4 py-2 whitespace-nowrap">{new Date(a.data_agendamento).toLocaleString('pt-PT', { dateStyle: 'short', timeStyle: 'short' })}</td>
                 <td className="px-4 py-2">{a.paciente?.nome}</td>
                 <td className="px-4 py-2">{a.medico?.nome || '—'}</td>
-                <td className="px-4 py-2">{a.servico?.nome || '—'}</td>
                 <td className="px-4 py-2">
                   <span className={`badge ${STATUS_CLASSES[a.status] || 'bg-slate-100'}`}>
                     {STATUS_LABELS[a.status] || a.status}
@@ -261,7 +255,7 @@ export default function Agendamentos() {
               </tr>
             ))}
             {list.data.length === 0 && (
-              <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-400">Sem marcações.</td></tr>
+              <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-400">Sem marcações.</td></tr>
             )}
           </tbody>
         </table>
@@ -277,22 +271,13 @@ export default function Agendamentos() {
             {errors.paciente_id && <p className="text-xs text-red-600 mt-1">{errors.paciente_id[0]}</p>}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div>
-              <label className="label">Médico</label>
-              <select className="input" value={form.medico_id} onChange={(e) => setForm({ ...form, medico_id: e.target.value })}>
-                <option value="">— sem médico atribuído —</option>
-                {medicos.map((m) => <option key={m.id} value={m.id}>{m.nome}{m.especialidade ? ` (${m.especialidade})` : ''}</option>)}
-              </select>
-              {errors.medico_id && <p className="text-xs text-red-600 mt-1">{errors.medico_id[0]}</p>}
-            </div>
-            <div>
-              <label className="label">Serviço</label>
-              <select className="input" value={form.servico_id} onChange={(e) => setForm({ ...form, servico_id: e.target.value })}>
-                <option value="">— sem serviço —</option>
-                {servicos.map((s) => <option key={s.id} value={s.id}>{s.nome}</option>)}
-              </select>
-            </div>
+          <div>
+            <label className="label">Médico</label>
+            <select className="input" value={form.medico_id} onChange={(e) => setForm({ ...form, medico_id: e.target.value })}>
+              <option value="">— sem médico atribuído —</option>
+              {medicos.map((m) => <option key={m.id} value={m.id}>{m.nome}{m.especialidade ? ` (${m.especialidade})` : ''}</option>)}
+            </select>
+            {errors.medico_id && <p className="text-xs text-red-600 mt-1">{errors.medico_id[0]}</p>}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">

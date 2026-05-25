@@ -11,7 +11,7 @@ class DisponibilidadeMedico extends Model
 
     protected $fillable = [
         'medico_id', 'dia_semana', 'hora_inicio', 'hora_fim',
-        'duracao_minutos', 'servico_id', 'ativo',
+        'duracao_minutos', 'ativo',
     ];
 
     protected $casts = [
@@ -21,10 +21,5 @@ class DisponibilidadeMedico extends Model
     public function medico(): BelongsTo
     {
         return $this->belongsTo(Medico::class);
-    }
-
-    public function servico(): BelongsTo
-    {
-        return $this->belongsTo(Servico::class);
     }
 }

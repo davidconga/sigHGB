@@ -18,8 +18,7 @@ class MedicoDisponibilidadeController extends Controller
     public function index(Medico $medico): JsonResponse
     {
         return response()->json([
-            'disponibilidades' => DisponibilidadeMedico::with('servico:id,nome')
-                ->where('medico_id', $medico->id)
+            'disponibilidades' => DisponibilidadeMedico::where('medico_id', $medico->id)
                 ->orderBy('dia_semana')
                 ->orderBy('hora_inicio')
                 ->get(),
@@ -37,7 +36,6 @@ class MedicoDisponibilidadeController extends Controller
             'hora_inicio'     => ['required', 'date_format:H:i'],
             'hora_fim'        => ['required', 'date_format:H:i', 'after:hora_inicio'],
             'duracao_minutos' => ['required', 'integer', 'min:5', 'max:480'],
-            'servico_id'      => ['nullable', 'exists:servicos,id'],
             'ativo'           => ['nullable', 'boolean'],
         ]);
 
@@ -45,7 +43,7 @@ class MedicoDisponibilidadeController extends Controller
         $data['ativo']     = $data['ativo'] ?? true;
 
         $d = DisponibilidadeMedico::create($data);
-        return response()->json($d->load('servico'), 201);
+        return response()->json($d, 201);
     }
 
     public function updateDisponibilidade(Request $request, Medico $medico, DisponibilidadeMedico $disponibilidade): JsonResponse
@@ -57,12 +55,11 @@ class MedicoDisponibilidadeController extends Controller
             'hora_inicio'     => ['sometimes', 'date_format:H:i'],
             'hora_fim'        => ['sometimes', 'date_format:H:i'],
             'duracao_minutos' => ['sometimes', 'integer', 'min:5', 'max:480'],
-            'servico_id'      => ['nullable', 'exists:servicos,id'],
             'ativo'           => ['sometimes', 'boolean'],
         ]);
 
         $disponibilidade->update($data);
-        return response()->json($disponibilidade->load('servico'));
+        return response()->json($disponibilidade);
     }
 
     public function destroyDisponibilidade(Medico $medico, DisponibilidadeMedico $disponibilidade): JsonResponse

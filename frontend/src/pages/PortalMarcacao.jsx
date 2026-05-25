@@ -12,7 +12,7 @@ const apiPub = axios.create({
   headers: { Accept: 'application/json' },
 })
 
-const PASSOS = ['Identificação', 'Médico/Serviço', 'Data e hora', 'Confirmação']
+const PASSOS = ['Identificação', 'Especialidade', 'Data e hora', 'Confirmação']
 
 export default function PortalMarcacao() {
   const [passo, setPasso] = useState(0)
@@ -23,10 +23,10 @@ export default function PortalMarcacao() {
   const [searchingBi, setSearchingBi] = useState(false)
   const [pacienteNovo, setPacienteNovo] = useState({ nome: '', bi: '', data_nascimento: '', sexo: '' })
   // Passo 2
+  const [especialidades, setEspecialidades] = useState([])
+  const [especialidade, setEspecialidade] = useState('')
   const [medicos, setMedicos] = useState([])
-  const [servicos, setServicos] = useState([])
   const [medicoId, setMedicoId] = useState('')
-  const [servicoId, setServicoId] = useState('')
   // Passo 3
   const [data, setData] = useState('')
   const [slots, setSlots] = useState([])
@@ -44,9 +44,16 @@ export default function PortalMarcacao() {
   const [sucesso, setSucesso] = useState(null)
 
   useEffect(() => {
-    apiPub.get('/portal/medicos').then((r) => setMedicos(r.data.data || []))
-    apiPub.get('/portal/servicos').then((r) => setServicos(r.data.data || []))
+    apiPub.get('/portal/especialidades').then((r) => setEspecialidades(r.data.data || []))
   }, [])
+
+  // Quando muda especialidade, carrega medicos dessa especialidade
+  useEffect(() => {
+    if (!especialidade) { setMedicos([]); setMedicoId(''); return }
+    apiPub.get('/portal/medicos', { params: { especialidade } })
+      .then((r) => setMedicos(r.data.data || []))
+      .catch(() => setMedicos([]))
+  }, [especialidade])
 
   async function buscarBi() {
     if (!bi.trim()) return
@@ -82,8 +89,7 @@ export default function PortalMarcacao() {
     try {
       const payload = {
         telefone,
-        medico_id: medicoId || null,
-        servico_id: servicoId || null,
+        medico_id: medicoId,
         data_agendamento: `${data}T${slotSel.inicio}`,
         duracao_minutos: slotSel.duracao_minutos,
         motivo: motivo || null,
@@ -120,7 +126,7 @@ export default function PortalMarcacao() {
       if (tipoIdent === 'novo') return pacienteNovo.nome && pacienteNovo.bi && pacienteNovo.data_nascimento
       return false
     }
-    if (passo === 1) return medicoId || servicoId
+    if (passo === 1) return !!especialidade && !!medicoId
     if (passo === 2) return !!slotSel && !!data
     return false
   }
@@ -266,28 +272,49 @@ export default function PortalMarcacao() {
         </div>
       )}
 
-      {/* PASSO 2: Médico/Serviço */}
+      {/* PASSO 2: Especialidade → Médico */}
       {passo === 1 && (
         <div className="space-y-4">
-          <h2 className="text-lg font-bold flex items-center gap-2"><Stethoscope size={18} /> Médico ou serviço</h2>
-          <p className="text-sm text-slate-500">Escolha um médico específico, ou um serviço para qualquer médico disponível.</p>
+          <h2 className="text-lg font-bold flex items-center gap-2"><Stethoscope size={18} /> Qual consulta pretende?</h2>
+          <p className="text-sm text-slate-500">Escolha primeiro a especialidade e depois o médico.</p>
 
           <div>
-            <label className="label">Médico</label>
-            <select className="input" value={medicoId} onChange={(e) => setMedicoId(e.target.value)}>
-              <option value="">— qualquer médico —</option>
-              {medicos.map((m) => (
-                <option key={m.id} value={m.id}>{m.nome} — {m.especialidade}</option>
-              ))}
-            </select>
+            <label className="label">Especialidade *</label>
+            {especialidades.length === 0 ? (
+              <p className="text-xs text-slate-400">A carregar…</p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {especialidades.map((e) => (
+                  <button type="button" key={e.especialidade}
+                    onClick={() => setEspecialidade(e.especialidade)}
+                    className={`px-3 py-1.5 rounded-full text-sm border transition ${
+                      especialidade === e.especialidade
+                        ? 'bg-hgb-600 text-white border-hgb-600'
+                        : 'bg-white border-slate-300 hover:border-hgb-500 hover:bg-hgb-50 text-slate-700'
+                    }`}>
+                    {e.especialidade}
+                    <span className="ml-1.5 text-xs opacity-75">({e.medicos_count})</span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
-          <div>
-            <label className="label">Serviço (opcional)</label>
-            <select className="input" value={servicoId} onChange={(e) => setServicoId(e.target.value)}>
-              <option value="">— qualquer serviço —</option>
-              {servicos.map((s) => <option key={s.id} value={s.id}>{s.nome}</option>)}
-            </select>
-          </div>
+
+          {especialidade && (
+            <div>
+              <label className="label">Médico *</label>
+              {medicos.length === 0 ? (
+                <p className="text-xs text-amber-700">Sem médicos disponíveis nesta especialidade.</p>
+              ) : (
+                <select className="input" value={medicoId} onChange={(e) => setMedicoId(e.target.value)} required>
+                  <option value="">— selecione —</option>
+                  {medicos.map((m) => (
+                    <option key={m.id} value={m.id}>{m.nome}</option>
+                  ))}
+                </select>
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -328,10 +355,6 @@ export default function PortalMarcacao() {
             </div>
           )}
 
-          {data && !medicoId && (
-            <p className="text-xs text-amber-700">Escolheu serviço sem médico específico — a recepção atribuirá um médico após confirmar.</p>
-          )}
-
           <div>
             <label className="label">Motivo da consulta (opcional)</label>
             <textarea className="input" rows={2} value={motivo} maxLength={500}
@@ -350,14 +373,12 @@ export default function PortalMarcacao() {
             <>
               <div className="bg-slate-50 border border-slate-200 rounded p-3 text-sm space-y-1">
                 <div className="font-semibold text-slate-700">Resumo do pedido</div>
+                {especialidade && (
+                  <div className="text-slate-600"><strong>Especialidade:</strong> {especialidade}</div>
+                )}
                 {(medicos.find((m) => m.id === Number(medicoId))) && (
                   <div className="text-slate-600">
                     <strong>Médico:</strong> {medicos.find((m) => m.id === Number(medicoId))?.nome}
-                  </div>
-                )}
-                {(servicos.find((s) => s.id === Number(servicoId))) && (
-                  <div className="text-slate-600">
-                    <strong>Serviço:</strong> {servicos.find((s) => s.id === Number(servicoId))?.nome}
                   </div>
                 )}
                 <div className="text-slate-600">

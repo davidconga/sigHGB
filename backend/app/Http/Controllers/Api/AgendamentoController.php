@@ -6,7 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\Agendamento;
 use App\Models\Paciente;
 use App\Models\User;
+use App\Models\Medico;
 use App\Services\Notifications\PushChannel;
+use App\Services\SlotResolver;
 use App\Services\Sms\SmsService;
 use App\Support\MedicoScope;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -18,7 +20,11 @@ use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 class AgendamentoController extends Controller
 {
-    public function __construct(private SmsService $sms, private PushChannel $push) {}
+    public function __construct(
+        private SmsService $sms,
+        private PushChannel $push,
+        private SlotResolver $slotResolver,
+    ) {}
 
     public function index(Request $request): JsonResponse
     {
@@ -85,6 +91,13 @@ class AgendamentoController extends Controller
             ], 422);
         }
 
+        if ($erro = $this->validarSlot($data['medico_id'] ?? null, $data['data_agendamento'], (int) ($data['duracao_minutos'] ?? 30))) {
+            return response()->json([
+                'message' => 'Horário sem disponibilidade.',
+                'errors'  => ['data_agendamento' => [$erro]],
+            ], 422);
+        }
+
         $notificar = (bool) ($data['notificar_sms'] ?? true);
         unset($data['notificar_sms']);
 
@@ -123,6 +136,19 @@ class AgendamentoController extends Controller
 
         $remarcado = isset($data['data_agendamento'])
             && Carbon::parse($data['data_agendamento'])->ne($agendamento->data_agendamento);
+
+        if ($remarcado || isset($data['medico_id']) || isset($data['duracao_minutos'])) {
+            $novoMedicoId = $data['medico_id'] ?? $agendamento->medico_id;
+            $novaData     = $data['data_agendamento'] ?? $agendamento->data_agendamento;
+            $novaDuracao  = (int) ($data['duracao_minutos'] ?? $agendamento->duracao_minutos);
+
+            if ($erro = $this->validarSlot($novoMedicoId, $novaData, $novaDuracao)) {
+                return response()->json([
+                    'message' => 'Horário sem disponibilidade.',
+                    'errors'  => ['data_agendamento' => [$erro]],
+                ], 422);
+            }
+        }
 
         if (isset($data['status']) && $data['status'] === 'cancelada' && ! $agendamento->cancelado_em) {
             $data['cancelado_em'] = now();
@@ -424,6 +450,18 @@ class AgendamentoController extends Controller
         if ($user->hasRole('admin')) return 'admin';
         if ($user->hasRole('medico')) return 'medico';
         return 'recepcao';
+    }
+
+    /**
+     * Valida que o médico tem disponibilidade no horário. Se não houver médico
+     * atribuído, salta a validação (marcação sem médico = encaixe).
+     */
+    private function validarSlot(?int $medicoId, $dataHora, int $duracao): ?string
+    {
+        if (! $medicoId) return null;
+        $medico = Medico::find($medicoId);
+        if (! $medico) return null;
+        return $this->slotResolver->validar($medico, Carbon::parse($dataHora), $duracao);
     }
 
     private function detectarConflito(int $pacienteId, ?int $medicoId, Carbon $inicio, int $duracao): ?string

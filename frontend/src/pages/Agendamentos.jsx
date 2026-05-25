@@ -53,6 +53,8 @@ export default function Agendamentos() {
   const [saving, setSaving] = useState(false)
   const [cancelOpen, setCancelOpen] = useState(null)
   const [cancelMotivo, setCancelMotivo] = useState('')
+  const [slots, setSlots] = useState([])
+  const [slotsLoading, setSlotsLoading] = useState(false)
 
   async function load() {
     const params = { page }
@@ -66,6 +68,19 @@ export default function Agendamentos() {
   useEffect(() => {
     api.get('/servicos').then((r) => setServicos(r.data.data || r.data || [])).catch(() => {})
   }, [])
+
+  // Carregar slots disponíveis quando médico + data mudam (apenas em criação)
+  useEffect(() => {
+    if (!open || form.id || !form.medico_id || !form.data_agendamento) {
+      setSlots([]); return
+    }
+    const data = form.data_agendamento.slice(0, 10)
+    setSlotsLoading(true)
+    api.get(`/medicos/${form.medico_id}/slots`, { params: { data } })
+      .then((r) => setSlots(r.data.slots || []))
+      .catch(() => setSlots([]))
+      .finally(() => setSlotsLoading(false))
+  }, [open, form.id, form.medico_id, form.data_agendamento?.slice(0, 10)])
 
   function openNew() {
     const now = new Date()
@@ -259,6 +274,39 @@ export default function Agendamentos() {
                 onChange={(e) => setForm({ ...form, duracao_minutos: e.target.value })} />
             </div>
           </div>
+
+          {!form.id && form.medico_id && form.data_agendamento && (
+            <div className="bg-slate-50 border border-slate-200 rounded p-3">
+              <div className="text-xs font-semibold text-slate-600 mb-2">
+                Slots disponíveis em {new Date(form.data_agendamento).toLocaleDateString('pt-PT', { weekday: 'long', day: '2-digit', month: 'short' })}
+                {slotsLoading && ' · a carregar…'}
+              </div>
+              {!slotsLoading && slots.length === 0 && (
+                <p className="text-xs text-amber-700">O médico não tem disponibilidade configurada para este dia.</p>
+              )}
+              {slots.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {slots.map((s) => (
+                    <button type="button" key={s.inicio} disabled={s.ocupado}
+                      onClick={() => {
+                        const d = form.data_agendamento.slice(0, 10)
+                        setForm({ ...form, data_agendamento: `${d}T${s.inicio}`, duracao_minutos: s.duracao_minutos })
+                      }}
+                      title={s.ocupado ? `Ocupado por ${s.agendamento_numero}` : 'Selecionar'}
+                      className={`text-xs px-2 py-1 rounded font-mono ${
+                        s.ocupado
+                          ? 'bg-red-100 text-red-600 cursor-not-allowed line-through'
+                          : form.data_agendamento.slice(11, 16) === s.inicio
+                            ? 'bg-hgb-600 text-white'
+                            : 'bg-white border border-slate-300 hover:border-hgb-500 hover:bg-hgb-50'
+                      }`}>
+                      {s.inicio}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           <div>
             <label className="label">Motivo da consulta</label>

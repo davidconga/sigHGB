@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\ExameController;
 use App\Http\Controllers\Api\FuncionarioController;
 use App\Http\Controllers\Api\LocationController;
 use App\Http\Controllers\Api\MedicoController;
+use App\Http\Controllers\Api\MedicoDisponibilidadeController;
 use App\Http\Controllers\Api\PacienteAnexoController;
 use App\Http\Controllers\Api\PacienteController;
 use App\Http\Controllers\Api\RegistrationController;
@@ -98,6 +99,19 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('medicos', [MedicoController::class, 'store'])->middleware('permission:medicos.create');
     Route::match(['put', 'patch'], 'medicos/{medico}', [MedicoController::class, 'update'])->middleware('permission:medicos.update');
     Route::delete('medicos/{medico}', [MedicoController::class, 'destroy'])->middleware('permission:medicos.delete');
+    // Disponibilidade do médico (horário semanal + ausências) e slots
+    Route::middleware('permission:medicos.view')->group(function () {
+        Route::get('medicos/{medico}/disponibilidade', [MedicoDisponibilidadeController::class, 'index']);
+        Route::get('medicos/{medico}/slots', [MedicoDisponibilidadeController::class, 'slotsDoDia']);
+    });
+    Route::middleware('permission:medicos.update')->group(function () {
+        Route::post('medicos/{medico}/disponibilidades', [MedicoDisponibilidadeController::class, 'storeDisponibilidade']);
+        Route::match(['put', 'patch'], 'medicos/{medico}/disponibilidades/{disponibilidade}', [MedicoDisponibilidadeController::class, 'updateDisponibilidade']);
+        Route::delete('medicos/{medico}/disponibilidades/{disponibilidade}', [MedicoDisponibilidadeController::class, 'destroyDisponibilidade']);
+        Route::post('medicos/{medico}/ausencias', [MedicoDisponibilidadeController::class, 'storeAusencia']);
+        Route::delete('medicos/{medico}/ausencias/{ausencia}', [MedicoDisponibilidadeController::class, 'destroyAusencia']);
+    });
+
     Route::post('medicos/{medico}/assinatura', [MedicoController::class, 'uploadAssinatura'])->middleware('permission:medicos.update');
     Route::delete('medicos/{medico}/assinatura', [MedicoController::class, 'deleteAssinatura'])->middleware('permission:medicos.update');
     Route::post('medicos/{medico}/carimbo', [MedicoController::class, 'uploadCarimbo'])->middleware('permission:medicos.update');

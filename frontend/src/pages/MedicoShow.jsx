@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import api, { downloadPdf } from '../api/client'
 import StatusBadge from '../components/StatusBadge'
+import MedicoDisponibilidade from '../components/MedicoDisponibilidade'
 
 export default function MedicoShow() {
   const { id } = useParams()
@@ -66,10 +67,12 @@ export default function MedicoShow() {
         <CountCard label="Altas" value={data.counts.altas} color="bg-cyan-700" Icon={BedDouble} />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-4 mb-4">
         <DocList title="Atestados recentes" items={data.atestados} pathPrefix="/atestados" labelFn={(a) => `${a.numero} · ${a.tipo}`} />
         <DocList title="Relatórios recentes" items={data.relatorios} pathPrefix="/relatorios" labelFn={(r) => `${r.numero} · ${r.tipo}`} />
       </div>
+
+      <MedicoDisponibilidade medicoId={m.id} />
     </div>
   )
 }

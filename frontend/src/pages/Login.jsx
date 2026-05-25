@@ -20,6 +20,17 @@ export default function Login() {
   const [loading, setLoading] = useState(false)
   const [apk, setApk] = useState(null)
 
+  const testCredentials = [
+    { role: 'Administrador', email: 'admin@hgb.ao', password: 'admin123' },
+    { role: 'Médico', email: 'antonio.manuel@hgb.ao', password: 'medico123' },
+    { role: 'Recepção', email: 'recepcao@hgb.ao', password: 'recepcao123' },
+  ]
+
+  function fillCredentials(c) {
+    setEmail(c.email)
+    setPassword(c.password)
+  }
+
   useEffect(() => {
     api.get('/app/android').then(({ data }) => {
       if (data?.exists) setApk(data)
@@ -61,6 +72,28 @@ export default function Login() {
             {loading ? 'A entrar…' : 'Entrar'}
           </button>
         </form>
+
+        <div className="mt-5 p-3 rounded-lg border border-amber-200 bg-amber-50">
+          <div className="text-xs font-semibold text-amber-800 mb-2">
+            Credenciais de teste — clique para preencher
+          </div>
+          <div className="space-y-1.5">
+            {testCredentials.map((c) => (
+              <button
+                key={c.email}
+                type="button"
+                onClick={() => fillCredentials(c)}
+                className="w-full text-left px-2 py-1.5 rounded bg-white hover:bg-amber-100 border border-amber-100 transition"
+              >
+                <div className="text-xs font-medium text-slate-800">{c.role}</div>
+                <div className="text-[11px] text-slate-500 font-mono">
+                  {c.email} · {c.password}
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+
         {apk && (
           <a
             href={apk.url}

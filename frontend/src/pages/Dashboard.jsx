@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import {
   Users, Stethoscope, ClipboardList, FlaskConical, FileCheck2, BedDouble,
   FileSpreadsheet, MessageSquare, Briefcase, AlertTriangle, Cake,
+  CalendarDays, ListChecks, CheckCircle2, Clock,
 } from 'lucide-react'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer,
@@ -14,6 +15,7 @@ const COLORS = ['#1f5fa6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'
 
 const cards = [
   { key: 'pacientes', label: 'Pacientes', to: '/pacientes', color: 'bg-hgb-600', Icon: Users },
+  { key: 'agendamentos', label: 'Marcações', to: '/agendamentos', color: 'bg-sky-600', Icon: CalendarDays },
   { key: 'medicos', label: 'Médicos ativos', to: '/medicos', color: 'bg-emerald-600', Icon: Stethoscope },
   { key: 'funcionarios', label: 'Funcionários', to: '/funcionarios', color: 'bg-purple-600', Icon: Briefcase },
   { key: 'atestados', label: 'Atestados', to: '/atestados', color: 'bg-rose-600', Icon: FileCheck2 },
@@ -33,7 +35,8 @@ export default function Dashboard() {
   if (!data) return <div className="text-slate-500">A carregar dashboard…</div>
 
   const { counts, atestados_por_mes, relatorios_por_tipo, atestados_por_efeito,
-    sms_por_dia, aniversariantes_proximos, rascunhos_pendentes } = data
+    sms_por_dia, aniversariantes_proximos, rascunhos_pendentes, agendamentos,
+    agendamentos_por_dia } = data
 
   return (
     <div>
@@ -56,6 +59,40 @@ export default function Dashboard() {
                 {rascunhos_pendentes.relatorios} relatório(s) em rascunho
               </Link>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ============ AGENDA DE HOJE ============ */}
+      {agendamentos && (
+        <div className="card p-4 mb-4 bg-gradient-to-r from-sky-50 to-white border-sky-200">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <CalendarDays className="text-sky-700" size={20} />
+              <h2 className="text-sm font-bold text-sky-900 uppercase tracking-wide">Marcações de hoje</h2>
+            </div>
+            <Link to="/agenda" className="text-xs text-sky-700 hover:underline">Ver agenda →</Link>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <Link to="/agendamentos" className="bg-white border border-sky-200 rounded p-3 hover:shadow transition">
+              <div className="text-2xl font-bold text-sky-900">{agendamentos.hoje_total}</div>
+              <div className="text-xs text-slate-500 flex items-center gap-1"><CalendarDays size={12} /> Total hoje</div>
+            </Link>
+            <Link to="/agendamentos" className="bg-white border border-amber-200 rounded p-3 hover:shadow transition">
+              <div className="text-2xl font-bold text-amber-700">{agendamentos.hoje_pendentes}</div>
+              <div className="text-xs text-slate-500 flex items-center gap-1"><Clock size={12} /> Por chegar</div>
+            </Link>
+            <Link to="/fila" className="bg-white border border-violet-200 rounded p-3 hover:shadow transition">
+              <div className="text-2xl font-bold text-violet-700">{agendamentos.hoje_na_fila}</div>
+              <div className="text-xs text-slate-500 flex items-center gap-1"><ListChecks size={12} /> Na fila</div>
+            </Link>
+            <Link to="/agendamentos" className="bg-white border border-emerald-200 rounded p-3 hover:shadow transition">
+              <div className="text-2xl font-bold text-emerald-700">{agendamentos.hoje_realizadas}</div>
+              <div className="text-xs text-slate-500 flex items-center gap-1"><CheckCircle2 size={12} /> Realizadas</div>
+            </Link>
+          </div>
+          <div className="mt-2 text-xs text-slate-500">
+            Próximos 7 dias: <strong className="text-slate-700">{agendamentos.proximos_7_dias}</strong> marcação(ões) por confirmar/realizar.
           </div>
         </div>
       )}
@@ -119,6 +156,25 @@ export default function Dashboard() {
             </BarChart>
           </ResponsiveContainer>
         </ChartCard>
+
+        {/* Marcações últimos 30 dias por estado */}
+        {agendamentos_por_dia && (
+          <ChartCard title="Marcações · últimos 30 dias" cols="col-span-12">
+            <ResponsiveContainer width="100%" height={240}>
+              <BarChart data={agendamentos_por_dia}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                <XAxis dataKey="dia" fontSize={10} stroke="#64748b" interval={1} />
+                <YAxis fontSize={11} stroke="#64748b" />
+                <Tooltip cursor={{ fill: '#f1f5f9' }} />
+                <Legend wrapperStyle={{ fontSize: 11 }} />
+                <Bar dataKey="agendadas"  stackId="a" fill="#0ea5e9" name="Agendadas" />
+                <Bar dataKey="realizadas" stackId="a" fill="#10b981" name="Realizadas" />
+                <Bar dataKey="faltou"     stackId="a" fill="#ef4444" name="Faltou" />
+                <Bar dataKey="canceladas" stackId="a" fill="#f59e0b" name="Canceladas" />
+              </BarChart>
+            </ResponsiveContainer>
+          </ChartCard>
+        )}
 
         {/* SMS últimos 7 dias */}
         <ChartCard title="SMS · últimos 7 dias" cols="col-span-12 lg:col-span-6">

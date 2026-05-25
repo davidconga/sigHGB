@@ -4,6 +4,7 @@ import {
   LayoutDashboard, Users, Stethoscope, ClipboardList,
   FlaskConical, FileCheck2, BedDouble, LogOut, BookMarked,
   FileSpreadsheet, Settings, UserCog, ShieldCheck, MessageSquare, Briefcase,
+  CalendarDays, CalendarClock, ListChecks,
   ChevronsLeft, ChevronsRight, Menu, X,
 } from 'lucide-react'
 import { useAuth } from '../auth/AuthContext'
@@ -12,6 +13,9 @@ const links = [
   { to: '/', label: 'Dashboard', end: true, Icon: LayoutDashboard },
   { to: '/pacientes', label: 'Pacientes', Icon: Users },
   { to: '/medicos', label: 'Médicos', Icon: Stethoscope },
+  { to: '/agendamentos', label: 'Marcações', Icon: CalendarDays },
+  { to: '/agenda', label: 'Agenda', Icon: CalendarClock },
+  { to: '/fila', label: 'Fila de espera', Icon: ListChecks },
   { to: '/relatorios', label: 'Relatórios clínicos', Icon: FileSpreadsheet },
   { to: '/atestados', label: 'Atestados', Icon: FileCheck2 },
   { to: '/consultas', label: 'Consultas', Icon: ClipboardList },

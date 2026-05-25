@@ -15,6 +15,8 @@ import PacientesScreen from '../screens/PacientesScreen'
 import PacienteShowScreen from '../screens/PacienteShowScreen'
 import SmsScreen from '../screens/SmsScreen'
 import NovaSmsScreen from '../screens/NovaSmsScreen'
+import AgendamentosScreen from '../screens/AgendamentosScreen'
+import NovaAgendamentoScreen from '../screens/NovaAgendamentoScreen'
 import PerfilScreen from '../screens/PerfilScreen'
 import ValidarAssinaturaScreen from '../screens/ValidarAssinaturaScreen'
 
@@ -60,6 +62,14 @@ function HomeStack() {
     </Stack.Navigator>
   )
 }
+function AgendamentosStack() {
+  return (
+    <Stack.Navigator screenOptions={screenHeaderOptions}>
+      <Stack.Screen name="AgendamentosList" component={AgendamentosScreen} options={{ title: 'Marcações' }} />
+      <Stack.Screen name="NovaAgendamento" component={NovaAgendamentoScreen} options={{ title: 'Nova marcação' }} />
+    </Stack.Navigator>
+  )
+}
 function SmsStack() {
   return (
     <Stack.Navigator screenOptions={screenHeaderOptions}>
@@ -88,6 +98,7 @@ function MainTabs() {
         tabBarIcon: ({ color, size }) => {
           const map = {
             Inicio: 'home',
+            Marcacoes: 'calendar',
             Atestados: 'document-text',
             Relatorios: 'reader',
             Pacientes: 'people',
@@ -99,6 +110,7 @@ function MainTabs() {
       })}
     >
       <Tab.Screen name="Inicio" component={HomeStack} />
+      <Tab.Screen name="Marcacoes" component={AgendamentosStack} options={{ tabBarLabel: 'Marcações' }} />
       <Tab.Screen name="Atestados" component={AtestadosStack} />
       <Tab.Screen name="Relatorios" component={RelatoriosStack} options={{ tabBarLabel: 'Relatórios' }} />
       <Tab.Screen name="Pacientes" component={PacientesStack} />

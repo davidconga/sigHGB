@@ -12,6 +12,7 @@ const empty = {
   paciente_id: '', medico_id: '', data_consulta: '',
   queixa_principal: '', historia_doenca: '', exame_fisico: '',
   diagnostico: '', cid: '', prescricao: '', observacoes: '', status: 'rascunho',
+  agendamento_id: '',
 }
 
 export default function Consultas() {
@@ -22,6 +23,7 @@ export default function Consultas() {
   const [open, setOpen] = useState(false)
   const [form, setForm] = useState(empty)
   const [errors, setErrors] = useState({})
+  const [pendentes, setPendentes] = useState([])
 
   async function load() {
     const { data } = await api.get('/consultas', { params: { page } })
@@ -31,7 +33,32 @@ export default function Consultas() {
 
   function openNew() {
     setForm({ ...empty, data_consulta: new Date().toISOString().slice(0, 16) })
-    setErrors({}); setOpen(true)
+    setErrors({}); setPendentes([]); setOpen(true)
+  }
+
+  async function carregarPendentes(pacienteId) {
+    if (!pacienteId) { setPendentes([]); return }
+    try {
+      const { data } = await api.get(`/agendamentos/paciente/${pacienteId}`)
+      setPendentes(data.data || [])
+    } catch { setPendentes([]) }
+  }
+
+  function selecionarPaciente(id) {
+    setForm((f) => ({ ...f, paciente_id: id, agendamento_id: '' }))
+    carregarPendentes(id)
+  }
+
+  function vincularAgendamento(a) {
+    setForm((f) => ({
+      ...f,
+      agendamento_id: a.id,
+      medico_id: a.medico_id || f.medico_id,
+      data_consulta: a.data_agendamento
+        ? new Date(a.data_agendamento).toISOString().slice(0, 16)
+        : f.data_consulta,
+      queixa_principal: f.queixa_principal || a.motivo || '',
+    }))
   }
   function openEdit(c) {
     setForm({
@@ -113,10 +140,29 @@ export default function Consultas() {
         <form onSubmit={save} className="grid grid-cols-2 gap-4">
           <div>
             <label className="label">Paciente *</label>
-            <select className="input" required value={form.paciente_id || ''} onChange={(e) => setForm({ ...form, paciente_id: e.target.value })}>
+            <select className="input" required value={form.paciente_id || ''} onChange={(e) => selecionarPaciente(e.target.value)}>
               <option value="">—</option>
               {pacientes.map((p) => <option key={p.id} value={p.id}>{p.nome} ({p.numero_processo})</option>)}
             </select>
+            {pendentes.length > 0 && !form.agendamento_id && (
+              <div className="mt-2 p-2 rounded bg-sky-50 border border-sky-200 text-xs space-y-1">
+                <div className="font-semibold text-sky-800">Marcações pendentes deste paciente:</div>
+                {pendentes.map((a) => (
+                  <button type="button" key={a.id} onClick={() => vincularAgendamento(a)}
+                    className="block w-full text-left px-2 py-1 rounded hover:bg-sky-100">
+                    <span className="font-mono">{a.numero}</span> · {new Date(a.data_agendamento).toLocaleString('pt-PT', { dateStyle: 'short', timeStyle: 'short' })}
+                    {a.medico ? ` · ${a.medico.nome}` : ''} <span className="text-sky-700">→ vincular</span>
+                  </button>
+                ))}
+              </div>
+            )}
+            {form.agendamento_id && (
+              <div className="mt-2 p-2 rounded bg-emerald-50 border border-emerald-200 text-xs flex items-center justify-between">
+                <span>Vinculado à marcação <span className="font-mono">#{form.agendamento_id}</span></span>
+                <button type="button" className="text-emerald-700 hover:underline"
+                  onClick={() => setForm({ ...form, agendamento_id: '' })}>desvincular</button>
+              </div>
+            )}
           </div>
           <div>
             <label className="label">Médico *</label>

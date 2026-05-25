@@ -38,6 +38,9 @@ class RolePermissionSeeder extends Seeder
         foreach (['view', 'create', 'update', 'delete'] as $a) {
             Permission::findOrCreate("funcionarios.{$a}");
         }
+        foreach (['view', 'create', 'update', 'delete', 'checkin'] as $a) {
+            Permission::findOrCreate("agendamentos.{$a}");
+        }
 
         $admin = Role::findOrCreate('admin');
         $admin->syncPermissions(Permission::all());
@@ -56,6 +59,10 @@ class RolePermissionSeeder extends Seeder
         $medicoPerms[] = 'cids.view';
         $medicoPerms[] = 'sms.view';
         $medicoPerms[] = 'sms.send';
+        $medicoPerms[] = 'agendamentos.view';
+        $medicoPerms[] = 'agendamentos.create';
+        $medicoPerms[] = 'agendamentos.update';
+        $medicoPerms[] = 'agendamentos.checkin';
         $medico->syncPermissions($medicoPerms);
 
         $recep = Role::findOrCreate('recepcionista');
@@ -70,6 +77,8 @@ class RolePermissionSeeder extends Seeder
             'cids.view',
             'sms.view', 'sms.send', 'sms.bulk',
             'funcionarios.view', 'funcionarios.create', 'funcionarios.update',
+            'agendamentos.view', 'agendamentos.create', 'agendamentos.update',
+            'agendamentos.delete', 'agendamentos.checkin',
         ]);
     }
 }

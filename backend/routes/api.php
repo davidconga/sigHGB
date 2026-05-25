@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\ActivityController;
+use App\Http\Controllers\Api\AgendamentoController;
 use App\Http\Controllers\Api\AltaController;
 use App\Http\Controllers\Api\AtestadoController;
 use App\Http\Controllers\Api\AuthController;
@@ -132,6 +133,23 @@ Route::middleware('auth:sanctum')->group(function () {
     // Validar assinatura (rascunho → emitido)
     Route::post('atestados/{atestado}/validar', [AtestadoController::class, 'validar'])->middleware('permission:atestados.update');
     Route::post('relatorios/{relatorio}/validar', [RelatorioController::class, 'validar'])->middleware('permission:relatorios.update');
+
+    // Agendamentos (marcação de consultas externas)
+    Route::middleware('permission:agendamentos.view')->group(function () {
+        Route::get('agendamentos', [AgendamentoController::class, 'index']);
+        Route::get('agendamentos/agenda', [AgendamentoController::class, 'agenda']);
+        Route::get('agendamentos/fila', [AgendamentoController::class, 'fila']);
+        Route::get('agendamentos/estatisticas', [AgendamentoController::class, 'estatisticas']);
+        Route::get('agendamentos/mapa-mensal/pdf', [AgendamentoController::class, 'mapaMensalPdf']);
+        Route::get('agendamentos/paciente/{paciente}', [AgendamentoController::class, 'porPaciente']);
+        Route::get('agendamentos/{agendamento}', [AgendamentoController::class, 'show']);
+        Route::get('agendamentos/{agendamento}/pdf', [AgendamentoController::class, 'pdf']);
+    });
+    Route::post('agendamentos', [AgendamentoController::class, 'store'])->middleware('permission:agendamentos.create');
+    Route::match(['put', 'patch'], 'agendamentos/{agendamento}', [AgendamentoController::class, 'update'])->middleware('permission:agendamentos.update');
+    Route::post('agendamentos/{agendamento}/check-in', [AgendamentoController::class, 'checkIn'])->middleware('permission:agendamentos.checkin');
+    Route::post('agendamentos/{agendamento}/cancelar', [AgendamentoController::class, 'cancelar'])->middleware('permission:agendamentos.update');
+    Route::delete('agendamentos/{agendamento}', [AgendamentoController::class, 'destroy'])->middleware('permission:agendamentos.delete');
 
     // Funcionários
     Route::middleware('permission:funcionarios.view')->group(function () {

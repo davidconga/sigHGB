@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Agendamento;
 use App\Models\Alta;
 use App\Models\Atestado;
 use App\Models\Consulta;
@@ -27,13 +28,66 @@ class DashboardController extends Controller
             'sms_por_dia' => $this->smsPorDia(),
             'aniversariantes_proximos' => $this->aniversariantesProximos(),
             'rascunhos_pendentes' => $this->rascunhosPendentes(),
+            'agendamentos' => $this->agendamentosStats(),
+            'agendamentos_por_dia' => $this->agendamentosPorDia(),
         ]);
+    }
+
+    private function agendamentosPorDia(): array
+    {
+        $start = now()->subDays(29)->startOfDay();
+
+        $raw = Agendamento::selectRaw("strftime('%Y-%m-%d', data_agendamento) as dia, status, count(*) as total")
+            ->where('data_agendamento', '>=', $start)
+            ->where('data_agendamento', '<=', now()->endOfDay())
+            ->groupBy('dia', 'status')
+            ->get();
+
+        $byDay = [];
+        foreach ($raw as $r) {
+            $byDay[$r->dia][$r->status] = (int) $r->total;
+        }
+
+        $result = [];
+        for ($i = 0; $i < 30; $i++) {
+            $d = $start->copy()->addDays($i);
+            $key = $d->format('Y-m-d');
+            $estados = $byDay[$key] ?? [];
+            $result[] = [
+                'dia'        => $d->format('d/m'),
+                'realizadas' => (int) ($estados['realizada'] ?? 0),
+                'faltou'     => (int) ($estados['faltou'] ?? 0),
+                'canceladas' => (int) ($estados['cancelada'] ?? 0),
+                'agendadas'  => (int) (($estados['pendente'] ?? 0) + ($estados['confirmada'] ?? 0) + ($estados['presente'] ?? 0) + ($estados['em_atendimento'] ?? 0)),
+            ];
+        }
+        return $result;
+    }
+
+    private function agendamentosStats(): array
+    {
+        $hoje = now()->toDateString();
+        $semana = now()->addDays(7);
+
+        return [
+            'hoje_total'      => Agendamento::whereDate('data_agendamento', $hoje)
+                                    ->whereNotIn('status', ['cancelada', 'faltou'])->count(),
+            'hoje_pendentes'  => Agendamento::whereDate('data_agendamento', $hoje)
+                                    ->whereIn('status', ['pendente', 'confirmada'])->count(),
+            'hoje_na_fila'    => Agendamento::whereDate('data_agendamento', $hoje)
+                                    ->whereIn('status', ['presente', 'em_atendimento'])->count(),
+            'hoje_realizadas' => Agendamento::whereDate('data_agendamento', $hoje)
+                                    ->where('status', 'realizada')->count(),
+            'proximos_7_dias' => Agendamento::whereBetween('data_agendamento', [now(), $semana])
+                                    ->whereIn('status', ['pendente', 'confirmada'])->count(),
+        ];
     }
 
     private function counts(): array
     {
         return [
             'pacientes' => Paciente::count(),
+            'agendamentos' => Agendamento::count(),
             'medicos' => Medico::where('ativo', true)->count(),
             'funcionarios' => Funcionario::where('ativo', true)->count(),
             'atestados' => Atestado::count(),

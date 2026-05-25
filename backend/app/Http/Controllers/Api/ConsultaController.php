@@ -46,9 +46,23 @@ class ConsultaController extends Controller
             'prescricao' => ['nullable', 'string'],
             'observacoes' => ['nullable', 'string'],
             'status' => ['nullable', 'in:rascunho,emitido,anulado'],
+            'agendamento_id' => ['nullable', 'exists:agendamentos,id'],
         ]);
 
+        $agendamentoId = $data['agendamento_id'] ?? null;
+        unset($data['agendamento_id']);
+
         $consulta = Consulta::create($data);
+
+        if ($agendamentoId) {
+            $ag = \App\Models\Agendamento::find($agendamentoId);
+            if ($ag && $ag->paciente_id === (int) $data['paciente_id']) {
+                $ag->update([
+                    'consulta_id' => $consulta->id,
+                    'status'      => 'realizada',
+                ]);
+            }
+        }
 
         return response()->json($consulta->load(['paciente', 'medico']), 201);
     }

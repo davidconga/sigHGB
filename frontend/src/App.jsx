@@ -22,6 +22,10 @@ import PacienteShow from './pages/PacienteShow'
 import MedicoShow from './pages/MedicoShow'
 import AtestadoShow from './pages/AtestadoShow'
 import RelatorioShow from './pages/RelatorioShow'
+import Agendamentos from './pages/Agendamentos'
+import Agenda from './pages/Agenda'
+import FilaEspera from './pages/FilaEspera'
+import AgendamentosEstatisticas from './pages/AgendamentosEstatisticas'
 import Consultas from './pages/relatorios/Consultas'
 import Exames from './pages/relatorios/Exames'
 import Atestados from './pages/relatorios/Atestados'
@@ -43,6 +47,10 @@ export default function App() {
             <Route path="pacientes/:id" element={<PacienteShow />} />
             <Route path="medicos" element={<Medicos />} />
             <Route path="medicos/:id" element={<MedicoShow />} />
+            <Route path="agendamentos" element={<Agendamentos />} />
+            <Route path="agendamentos/estatisticas" element={<AgendamentosEstatisticas />} />
+            <Route path="agenda" element={<Agenda />} />
+            <Route path="fila" element={<FilaEspera />} />
             <Route path="consultas" element={<Consultas />} />
             <Route path="exames" element={<Exames />} />
             <Route path="atestados" element={<Atestados />} />

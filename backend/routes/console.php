@@ -10,3 +10,4 @@ Artisan::command('inspire', function () {
 
 Schedule::command('sms:dispatch')->everyMinute()->withoutOverlapping();
 Schedule::command('sms:birthdays')->dailyAt('08:00')->timezone('Africa/Luanda');
+Schedule::command('sms:agendamento-lembretes')->dailyAt('09:00')->timezone('Africa/Luanda');

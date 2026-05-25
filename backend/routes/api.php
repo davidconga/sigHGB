@@ -39,15 +39,15 @@ Route::get('/registo/opcoes', function () {
     ]);
 });
 
-// Portal publico de marcacao — sem autenticacao, com rate-limit estrito.
-// Iniciar/confirmar tem limite mais apertado para conter abuso de SMS.
+// Portal publico de marcacao — sem autenticacao, com rate-limit moderado.
+// Iniciar tem limite mais apertado porque cada chamada gera SMS.
 Route::prefix('portal')->group(function () {
-    Route::get('/medicos', [PortalMarcacaoController::class, 'medicos'])->middleware('throttle:60,1');
-    Route::get('/servicos', [PortalMarcacaoController::class, 'servicos'])->middleware('throttle:60,1');
-    Route::get('/medicos/{medico}/slots', [PortalMarcacaoController::class, 'slots'])->middleware('throttle:60,1');
-    Route::post('/verificar-paciente', [PortalMarcacaoController::class, 'verificarPaciente'])->middleware('throttle:20,1');
-    Route::post('/iniciar', [PortalMarcacaoController::class, 'iniciar'])->middleware('throttle:5,1');
-    Route::post('/confirmar', [PortalMarcacaoController::class, 'confirmar'])->middleware('throttle:20,1');
+    Route::get('/medicos', [PortalMarcacaoController::class, 'medicos'])->middleware('throttle:120,1');
+    Route::get('/servicos', [PortalMarcacaoController::class, 'servicos'])->middleware('throttle:120,1');
+    Route::get('/medicos/{medico}/slots', [PortalMarcacaoController::class, 'slots'])->middleware('throttle:120,1');
+    Route::post('/verificar-paciente', [PortalMarcacaoController::class, 'verificarPaciente'])->middleware('throttle:30,1');
+    Route::post('/iniciar', [PortalMarcacaoController::class, 'iniciar'])->middleware('throttle:10,1');
+    Route::post('/confirmar', [PortalMarcacaoController::class, 'confirmar'])->middleware('throttle:30,1');
 });
 
 Route::get('/app/android', function () {

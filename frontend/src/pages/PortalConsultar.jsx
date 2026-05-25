@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import axios from 'axios'
 import {
   Search, Phone, Hash, AlertCircle, CheckCircle2, Clock, XCircle,
-  Calendar, User, Stethoscope, ArrowRight,
+  Calendar, User, Stethoscope, ArrowRight, IdCard,
 } from 'lucide-react'
 
 const apiPub = axios.create({
@@ -34,7 +34,9 @@ const COLOR_CLASSES = {
 export default function PortalConsultar() {
   const [params] = useSearchParams()
   const [numero, setNumero] = useState(params.get('numero') || '')
+  const [metodo, setMetodo] = useState('telefone') // 'telefone' | 'bi'
   const [telefone, setTelefone] = useState('')
+  const [bi, setBi] = useState('')
   const [loading, setLoading] = useState(false)
   const [erro, setErro] = useState('')
   const [resultado, setResultado] = useState(null)
@@ -43,10 +45,10 @@ export default function PortalConsultar() {
     e?.preventDefault()
     setErro(''); setResultado(null); setLoading(true)
     try {
-      const { data } = await apiPub.post('/portal/consultar', {
-        numero: numero.trim(),
-        telefone: telefone.trim(),
-      })
+      const payload = { numero: numero.trim() }
+      if (metodo === 'telefone') payload.telefone = telefone.trim()
+      else payload.bi = bi.trim()
+      const { data } = await apiPub.post('/portal/consultar', payload)
       setResultado(data)
     } catch (e) {
       setErro(e.response?.data?.message || 'Não foi possível consultar.')
@@ -54,8 +56,13 @@ export default function PortalConsultar() {
   }
 
   function reiniciar() {
-    setResultado(null); setErro(''); setNumero(''); setTelefone('')
+    setResultado(null); setErro(''); setNumero(''); setTelefone(''); setBi('')
   }
+
+  const podeSubmeter = numero.trim() && (
+    (metodo === 'telefone' && telefone.trim()) ||
+    (metodo === 'bi' && bi.trim())
+  )
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-hgb-50 via-white to-slate-50">
@@ -86,14 +93,45 @@ export default function PortalConsultar() {
               </div>
 
               <div>
-                <label className="label flex items-center gap-1"><Phone size={12} /> Telefone *</label>
-                <input className="input" value={telefone}
-                  onChange={(e) => setTelefone(e.target.value)}
-                  placeholder="Telefone usado na marcação" maxLength={30} required />
+                <label className="label">Confirme a sua identidade com:</label>
+                <div className="grid grid-cols-2 gap-2 mb-3">
+                  <button type="button" onClick={() => setMetodo('telefone')}
+                    className={`p-2.5 rounded-md border-2 text-sm font-medium transition inline-flex items-center justify-center gap-2 ${
+                      metodo === 'telefone' ? 'border-hgb-600 bg-hgb-50 text-hgb-800' : 'border-slate-200 text-slate-600 hover:border-slate-300'
+                    }`}>
+                    <Phone size={14} /> Telefone
+                  </button>
+                  <button type="button" onClick={() => setMetodo('bi')}
+                    className={`p-2.5 rounded-md border-2 text-sm font-medium transition inline-flex items-center justify-center gap-2 ${
+                      metodo === 'bi' ? 'border-hgb-600 bg-hgb-50 text-hgb-800' : 'border-slate-200 text-slate-600 hover:border-slate-300'
+                    }`}>
+                    <IdCard size={14} /> Bilhete de Identidade
+                  </button>
+                </div>
+
+                {metodo === 'telefone' ? (
+                  <>
+                    <input className="input" value={telefone}
+                      onChange={(e) => setTelefone(e.target.value)}
+                      placeholder="Telefone usado na marcação" maxLength={30} />
+                    <p className="text-xs text-slate-500 mt-1">
+                      Pode introduzir só os últimos 4 dígitos do telefone.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <input className="input font-mono uppercase" value={bi}
+                      onChange={(e) => setBi(e.target.value.toUpperCase())}
+                      placeholder="Ex.: 000123456LA041" maxLength={20} />
+                    <p className="text-xs text-slate-500 mt-1">
+                      Útil se usou o telefone de outra pessoa para marcar.
+                    </p>
+                  </>
+                )}
               </div>
 
               <button type="submit" className="btn-primary w-full inline-flex items-center justify-center gap-2"
-                disabled={loading || !numero.trim() || !telefone.trim()}>
+                disabled={loading || !podeSubmeter}>
                 <Search size={16} /> {loading ? 'A consultar…' : 'Consultar'}
               </button>
 

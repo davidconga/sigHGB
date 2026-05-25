@@ -178,17 +178,19 @@ class PortalMarcacaoController extends Controller
 
     /**
      * Consulta publica do estado de uma marcacao. Requer numero do
-     * agendamento + telefone (qualquer um dos dois canais — match exato
-     * ou pelos ultimos 4 digitos para tolerancia a prefixo internacional).
+     * agendamento + UM segundo factor: telefone OU BI do paciente.
+     * O BI cobre casos onde o paciente usou telefone de terceiro
+     * para marcar e ja nao tem acesso a esse telefone.
      */
     public function consultar(Request $request): JsonResponse
     {
         $data = $request->validate([
             'numero'   => ['required', 'string', 'max:30'],
-            'telefone' => ['required', 'string', 'max:30'],
+            'telefone' => ['required_without:bi', 'nullable', 'string', 'max:30'],
+            'bi'       => ['required_without:telefone', 'nullable', 'string', 'max:20'],
         ]);
 
-        $ag = Agendamento::with(['paciente:id,nome,telefone', 'medico:id,nome,especialidade'])
+        $ag = Agendamento::with(['paciente:id,nome,telefone,bi', 'medico:id,nome,especialidade'])
             ->where('numero', strtoupper(trim($data['numero'])))
             ->first();
 
@@ -196,14 +198,31 @@ class PortalMarcacaoController extends Controller
             return response()->json(['message' => 'Marcação não encontrada.'], 404);
         }
 
-        // Confirma identidade pelo telefone do paciente (match exato ou ultimos 4 digitos)
-        $tel = preg_replace('/\D/', '', $ag->paciente?->telefone ?? '');
-        $tentativa = preg_replace('/\D/', '', $data['telefone']);
-        $match = $tel && $tentativa
-            && ($tel === $tentativa || str_ends_with($tel, substr($tentativa, -4)));
+        $match = false;
+
+        // Verifica por telefone (match exato ou ultimos 4 digitos)
+        if (! empty($data['telefone'])) {
+            $tel = preg_replace('/\D/', '', $ag->paciente?->telefone ?? '');
+            $tentativa = preg_replace('/\D/', '', $data['telefone']);
+            if ($tel && $tentativa
+                && ($tel === $tentativa || str_ends_with($tel, substr($tentativa, -4)))) {
+                $match = true;
+            }
+        }
+
+        // Verifica por BI (case-insensitive, sem espacos)
+        if (! $match && ! empty($data['bi'])) {
+            $biGuardado = strtoupper(preg_replace('/\s+/', '', $ag->paciente?->bi ?? ''));
+            $biTentativa = strtoupper(preg_replace('/\s+/', '', $data['bi']));
+            if ($biGuardado && $biTentativa && $biGuardado === $biTentativa) {
+                $match = true;
+            }
+        }
 
         if (! $match) {
-            return response()->json(['message' => 'Número e telefone não coincidem.'], 403);
+            return response()->json([
+                'message' => 'Os dados não coincidem com a marcação. Verifique o número, telefone ou BI.',
+            ], 403);
         }
 
         $statusLabels = [

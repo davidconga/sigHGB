@@ -115,6 +115,11 @@ export default function Login() {
 
         <div className="text-center mt-4 pt-4 border-t border-slate-100 space-y-2">
           <div>
+            <Link to="/marcar" className="inline-block text-sm font-semibold text-hgb-700 bg-hgb-50 hover:bg-hgb-100 px-4 py-2 rounded transition">
+              Sou paciente — marcar consulta online
+            </Link>
+          </div>
+          <div>
             <Link to="/registo" className="text-sm text-hgb-600 hover:underline">
               Sou médico ou funcionário — criar conta
             </Link>

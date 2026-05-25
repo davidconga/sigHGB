@@ -56,6 +56,8 @@ export default function Agendamentos() {
   const [slots, setSlots] = useState([])
   const [slotsLoading, setSlotsLoading] = useState(false)
 
+  const [pendentesCount, setPendentesCount] = useState(0)
+
   async function load() {
     const params = { page }
     Object.entries(filters).forEach(([k, v]) => { if (v) params[k] = v })
@@ -63,7 +65,15 @@ export default function Agendamentos() {
     setList(data)
   }
 
+  async function loadPendentes() {
+    try {
+      const { data } = await api.get('/agendamentos', { params: { status: 'pendente', per_page: 1 } })
+      setPendentesCount(data.total || 0)
+    } catch {}
+  }
+
   useEffect(() => { load() }, [page, filters])
+  useEffect(() => { loadPendentes() }, [filters.status])
 
   useEffect(() => {
     api.get('/servicos').then((r) => setServicos(r.data.data || r.data || [])).catch(() => {})
@@ -129,6 +139,16 @@ export default function Agendamentos() {
     await api.post(`/agendamentos/${id}/check-in`); load()
   }
 
+  async function aprovar(a) {
+    if (!await confirm(`Aprovar marcação ${a.numero}? O paciente será notificado por SMS.`)) return
+    try {
+      await api.put(`/agendamentos/${a.id}`, { status: 'confirmada' })
+      load(); loadPendentes()
+    } catch (e) {
+      alert(e.response?.data?.message || 'Erro ao aprovar.')
+    }
+  }
+
   async function cancelar() {
     if (!cancelOpen) return
     await api.post(`/agendamentos/${cancelOpen.id}/cancelar`, { motivo_cancelamento: cancelMotivo || null })
@@ -140,6 +160,14 @@ export default function Agendamentos() {
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
         <h1 className="text-2xl font-bold">Marcação de consultas externas</h1>
         <div className="flex gap-2">
+          {pendentesCount > 0 && filters.status !== 'pendente' && (
+            <button
+              onClick={() => { setPage(1); setFilters({ ...filters, status: 'pendente' }) }}
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-md text-sm font-semibold bg-amber-100 text-amber-800 hover:bg-amber-200 border border-amber-300"
+            >
+              {pendentesCount} pendente{pendentesCount > 1 ? 's' : ''} de aprovação
+            </button>
+          )}
           <Link to="/agendamentos/estatisticas" className="btn-outline inline-flex items-center gap-2">
             <BarChart3 size={16} /> Estatísticas
           </Link>
@@ -203,6 +231,12 @@ export default function Agendamentos() {
                 </td>
                 <td className="px-4 py-2 text-right whitespace-nowrap">
                   <div className="inline-flex gap-1">
+                    {a.status === 'pendente' && (
+                      <button onClick={() => aprovar(a)} title="Aprovar marcação"
+                        className="p-1.5 rounded hover:bg-emerald-50 text-emerald-600">
+                        <CheckCircle2 size={16} />
+                      </button>
+                    )}
                     {['pendente', 'confirmada'].includes(a.status) && (
                       <button onClick={() => checkIn(a.id)} title="Check-in" className="p-1.5 rounded hover:bg-violet-50 text-violet-600">
                         <LogIn size={16} />

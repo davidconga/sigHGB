@@ -24,6 +24,7 @@ import AtestadoShow from './pages/AtestadoShow'
 import RelatorioShow from './pages/RelatorioShow'
 import Agendamentos from './pages/Agendamentos'
 import Agenda from './pages/Agenda'
+import PortalMarcacao from './pages/PortalMarcacao'
 import FilaEspera from './pages/FilaEspera'
 import AgendamentosEstatisticas from './pages/AgendamentosEstatisticas'
 import Consultas from './pages/relatorios/Consultas'
@@ -41,6 +42,7 @@ export default function App() {
           <Route path="/registo" element={<Registo />} />
           <Route path="/verificar" element={<Verificar />} />
           <Route path="/verificar/:codigo" element={<Verificar />} />
+          <Route path="/marcar" element={<PortalMarcacao />} />
           <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
             <Route index element={<Dashboard />} />
             <Route path="pacientes" element={<Pacientes />} />

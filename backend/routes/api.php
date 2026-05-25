@@ -17,6 +17,7 @@ use App\Http\Controllers\Api\MedicoController;
 use App\Http\Controllers\Api\MedicoDisponibilidadeController;
 use App\Http\Controllers\Api\PacienteAnexoController;
 use App\Http\Controllers\Api\PacienteController;
+use App\Http\Controllers\Api\PortalMarcacaoController;
 use App\Http\Controllers\Api\RegistrationController;
 use App\Http\Controllers\Api\RelatorioController;
 use App\Http\Controllers\Api\RoleController;
@@ -36,6 +37,17 @@ Route::get('/registo/opcoes', function () {
         'departamentos' => App\Models\Departamento::orderBy('nome')->get(['id', 'nome']),
         'servicos'      => App\Models\Servico::orderBy('nome')->get(['id', 'nome', 'departamento_id']),
     ]);
+});
+
+// Portal publico de marcacao — sem autenticacao, com rate-limit estrito.
+// Iniciar/confirmar tem limite mais apertado para conter abuso de SMS.
+Route::prefix('portal')->group(function () {
+    Route::get('/medicos', [PortalMarcacaoController::class, 'medicos'])->middleware('throttle:60,1');
+    Route::get('/servicos', [PortalMarcacaoController::class, 'servicos'])->middleware('throttle:60,1');
+    Route::get('/medicos/{medico}/slots', [PortalMarcacaoController::class, 'slots'])->middleware('throttle:60,1');
+    Route::post('/verificar-paciente', [PortalMarcacaoController::class, 'verificarPaciente'])->middleware('throttle:20,1');
+    Route::post('/iniciar', [PortalMarcacaoController::class, 'iniciar'])->middleware('throttle:5,1');
+    Route::post('/confirmar', [PortalMarcacaoController::class, 'confirmar'])->middleware('throttle:20,1');
 });
 
 Route::get('/app/android', function () {

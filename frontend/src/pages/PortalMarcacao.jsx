@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import axios from 'axios'
+import { Link } from 'react-router-dom'
 import {
   CalendarDays, Check, ChevronRight, ChevronLeft, Phone, User, Stethoscope,
   Search, Plus, MessageSquare, ShieldCheck, AlertCircle, CheckCircle2,
@@ -142,9 +143,14 @@ export default function PortalMarcacao() {
             Vai receber um SMS no seu telemóvel quando a recepção confirmar a sua marcação.
             Em caso de dúvida, contacte o HGB.
           </p>
-          <button onClick={() => window.location.reload()} className="btn-primary mt-6">
-            Fazer nova marcação
-          </button>
+          <div className="flex gap-2 justify-center mt-6">
+            <Link to={`/consultar?numero=${sucesso.agendamento_numero}`} className="btn-outline">
+              Consultar estado
+            </Link>
+            <button onClick={() => window.location.reload()} className="btn-primary">
+              Fazer nova marcação
+            </button>
+          </div>
         </div>
       </PortalLayout>
     )
@@ -431,6 +437,9 @@ function PortalLayout({ children }) {
           {children}
         </div>
         <p className="text-center text-xs text-slate-400 mt-4">
+          Já marcou e quer ver o estado? <Link to="/consultar" className="text-hgb-600 hover:underline">Consultar marcação</Link>
+        </p>
+        <p className="text-center text-xs text-slate-400 mt-2">
           Em caso de emergência, dirija-se imediatamente à urgência do hospital.
         </p>
       </div>

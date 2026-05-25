@@ -48,6 +48,7 @@ Route::prefix('portal')->group(function () {
     Route::post('/verificar-paciente', [PortalMarcacaoController::class, 'verificarPaciente'])->middleware('throttle:30,1');
     Route::post('/iniciar', [PortalMarcacaoController::class, 'iniciar'])->middleware('throttle:10,1');
     Route::post('/confirmar', [PortalMarcacaoController::class, 'confirmar'])->middleware('throttle:30,1');
+    Route::post('/consultar', [PortalMarcacaoController::class, 'consultar'])->middleware('throttle:30,1');
 });
 
 Route::get('/app/android', function () {

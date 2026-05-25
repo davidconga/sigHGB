@@ -114,9 +114,12 @@ export default function Login() {
         )}
 
         <div className="text-center mt-4 pt-4 border-t border-slate-100 space-y-2">
-          <div>
+          <div className="flex gap-2 justify-center flex-wrap">
             <Link to="/marcar" className="inline-block text-sm font-semibold text-hgb-700 bg-hgb-50 hover:bg-hgb-100 px-4 py-2 rounded transition">
-              Sou paciente — marcar consulta online
+              Marcar consulta
+            </Link>
+            <Link to="/consultar" className="inline-block text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 px-4 py-2 rounded transition">
+              Consultar marcação
             </Link>
           </div>
           <div>

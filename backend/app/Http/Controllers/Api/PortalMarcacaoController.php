@@ -179,6 +179,62 @@ class PortalMarcacaoController extends Controller
     }
 
     /**
+     * Consulta publica do estado de uma marcacao. Requer numero do
+     * agendamento + telefone (qualquer um dos dois canais — match exato
+     * ou pelos ultimos 4 digitos para tolerancia a prefixo internacional).
+     */
+    public function consultar(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'numero'   => ['required', 'string', 'max:30'],
+            'telefone' => ['required', 'string', 'max:30'],
+        ]);
+
+        $ag = Agendamento::with(['paciente:id,nome,telefone', 'medico:id,nome,especialidade', 'servico:id,nome'])
+            ->where('numero', strtoupper(trim($data['numero'])))
+            ->first();
+
+        if (! $ag) {
+            return response()->json(['message' => 'Marcação não encontrada.'], 404);
+        }
+
+        // Confirma identidade pelo telefone do paciente (match exato ou ultimos 4 digitos)
+        $tel = preg_replace('/\D/', '', $ag->paciente?->telefone ?? '');
+        $tentativa = preg_replace('/\D/', '', $data['telefone']);
+        $match = $tel && $tentativa
+            && ($tel === $tentativa || str_ends_with($tel, substr($tentativa, -4)));
+
+        if (! $match) {
+            return response()->json(['message' => 'Número e telefone não coincidem.'], 403);
+        }
+
+        $statusLabels = [
+            'pendente'       => 'Pendente de aprovação pela recepção',
+            'confirmada'     => 'Confirmada',
+            'presente'       => 'Paciente presente (check-in feito)',
+            'em_atendimento' => 'Em atendimento',
+            'realizada'      => 'Consulta realizada',
+            'cancelada'      => 'Cancelada',
+            'faltou'         => 'Marcada como faltou',
+        ];
+
+        return response()->json([
+            'numero'              => $ag->numero,
+            'status'              => $ag->status,
+            'status_label'        => $statusLabels[$ag->status] ?? $ag->status,
+            'data_agendamento'    => $ag->data_agendamento->toIso8601String(),
+            'duracao_minutos'     => $ag->duracao_minutos,
+            'medico'              => $ag->medico ? ['nome' => $ag->medico->nome, 'especialidade' => $ag->medico->especialidade] : null,
+            'servico'             => $ag->servico ? ['nome' => $ag->servico->nome] : null,
+            'motivo'              => $ag->motivo,
+            'motivo_cancelamento' => $ag->motivo_cancelamento,
+            'check_in_em'         => $ag->check_in_em?->toIso8601String(),
+            'criado_em'           => $ag->created_at->toIso8601String(),
+            'paciente_primeiro_nome' => explode(' ', trim($ag->paciente?->nome ?? ''))[0] ?? '',
+        ]);
+    }
+
+    /**
      * Passo 2: paciente introduz o codigo recebido por SMS. Se valido,
      * cria a marcacao em estado `pendente` (aguarda recepcao).
      */
@@ -266,11 +322,11 @@ class PortalMarcacaoController extends Controller
             'paciente_id'    => $pacienteId,
         ]);
 
-        // SMS de confirmacao do pedido
+        // SMS de confirmacao do pedido (com link para consultar estado)
         $quando = $agendamento->data_agendamento->format('d/m/Y \à\s H:i');
         $this->sms->dispatch(
             to: $s->telefone,
-            body: "HGB: Pedido {$agendamento->numero} recebido para {$quando}. A recepcao ira confirmar e voce recebera novo SMS.",
+            body: "HGB: Pedido {$agendamento->numero} recebido para {$quando}. Veja o estado em sig.hgbenguela.com/consultar",
             pacienteId: $pacienteId,
         );
 
